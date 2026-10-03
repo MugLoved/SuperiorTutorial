@@ -1,0 +1,14 @@
+{
+  "npc": "superior_tutorial:larry",
+  "priority": 2,
+  "if": { "unlocked": "superior_tutorial_larry_bargain", "armed": false },
+  "unless": { "unlocked": "superior_tutorial_larry_done" },
+  "beats": [
+    {
+      "text": { "translate": "superior_tutorial.larry.unarmed.1" },
+      "choices": [
+        { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "end" }
+      ]
+    }
+  ]
+}

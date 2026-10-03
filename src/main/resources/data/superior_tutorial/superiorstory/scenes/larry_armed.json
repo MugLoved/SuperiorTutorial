@@ -1,0 +1,37 @@
+{
+  "npc": "superior_tutorial:larry",
+  "priority": 3,
+  "if": { "unlocked": "superior_tutorial_larry_bargain", "armed": true },
+  "unless": { "unlocked": "superior_tutorial_larry_done" },
+  "beats": [
+    {
+      "text": { "translate": "superior_tutorial.larry.armed.1" },
+      "choices": [
+        { "translate": "superior_tutorial.choice.go_on" },
+        { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "end" }
+      ]
+    },
+    {
+      "text": { "translate": "superior_tutorial.larry.armed.2" },
+      "choices": [
+        { "text": { "translate": "superior_tutorial.choice.slay" }, "goto": "slay" },
+        { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "left" }
+      ]
+    }
+  ],
+  "branches": {
+    "slay": [
+      {
+        "text": { "translate": "superior_tutorial.larry.slay.1" },
+        "unlock": { "keys": ["superior_tutorial_larry_done", "superior_tutorial_larry_slain"], "notify": false }
+      }
+    ],
+    "left": [
+      { "text": { "translate": "superior_tutorial.larry.left.1" } },
+      {
+        "text": { "translate": "superior_tutorial.larry.left.2" },
+        "unlock": { "keys": ["superior_tutorial_larry_done", "superior_tutorial_larry_left"], "notify": false }
+      }
+    ]
+  }
+}

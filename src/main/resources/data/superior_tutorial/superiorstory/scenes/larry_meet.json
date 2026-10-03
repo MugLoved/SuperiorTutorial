@@ -1,0 +1,46 @@
+{
+  "npc": "superior_tutorial:larry",
+  "priority": 1,
+  "unless": { "unlocked": "superior_tutorial_larry_done" },
+  "beats": [
+    {
+      "text": { "translate": "superior_tutorial.larry.meet.1" },
+      "choices": [
+        { "translate": "superior_tutorial.choice.go_on" },
+        { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "end" }
+      ]
+    },
+    {
+      "text": { "translate": "superior_tutorial.larry.meet.2" },
+      "choices": [
+        { "translate": "superior_tutorial.choice.go_on" },
+        { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "end" }
+      ]
+    },
+    {
+      "text": { "translate": "superior_tutorial.larry.meet.3" },
+      "choices": [
+        { "translate": "superior_tutorial.choice.go_on" },
+        { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "end" }
+      ]
+    },
+    {
+      "text": { "translate": "superior_tutorial.larry.meet.4" },
+      "choices": [
+        { "translate": "superior_tutorial.choice.go_on" },
+        { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "end" }
+      ]
+    },
+    {
+      "text": { "translate": "superior_tutorial.larry.meet.5" },
+      "choices": [
+        {
+          "text": { "translate": "superior_tutorial.choice.deal" },
+          "unlock": { "key": "superior_tutorial_larry_bargain", "notify": false },
+          "goto": "end"
+        },
+        { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "end" }
+      ]
+    }
+  ]
+}
