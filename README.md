@@ -38,7 +38,7 @@ Everyone else still sees their own Larry. To reset a player for testing: `/super
 
 ## Dialogue
 
-Files in `src/main/resources/data/superior_tutorial/superiorstory/scenes/`, all bound with `"npc": "superior_tutorial:larry"`:
+Files in `src/main/resources/data/superior_tutorial/superiorstory/scenes/`, all bound with `"npc": "superior_tutorial:larry"` and marked `"chat": true`. Story only lets a mob talk when its dialogue offers something (a quest, a hand-over) or is marked as chat, so every Larry dialogue needs the mark:
 
 - `larry_meet.json` (priority 1): the first meeting. Every screen has Leave. The last choice strikes the bargain.
 - `larry_unarmed.json` (priority 2): after the bargain, with no weapon in hand: he points to the bench.

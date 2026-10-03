@@ -1,5 +1,6 @@
 {
   "npc": "superior_tutorial:larry",
+  "chat": true,
   "priority": 3,
   "if": { "unlocked": "superior_tutorial_larry_bargain", "armed": true },
   "unless": { "unlocked": "superior_tutorial_larry_done" },
