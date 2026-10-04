@@ -31,7 +31,7 @@ Mug's GeckoLib model (`geo/entity/larry.geo.json`), his two skins (`textures/ent
 | Animation | Plays when |
 | --- | --- |
 | `idle` (12 s, loops) | He is waiting. He breathes so faintly you can't tell at a glance; his eyes glow with each breath, up to 40%. His head follows the player on top of it. |
-| `shake` (0.9 s) | A survival player hits him (with the "Won't take. Tried." line). Plays over idle; his eyes flare, a little dust falls. Only a player still waiting on him sees it. |
+| `twitch` (0.9 s) | While he waits, at the end of every third to fifth breath (random each time): a small twitch runs through him and a little dust falls, then he breathes on. Not while someone is talking to him. |
 | `slay` (2.8 s, then held while he fades: 4.4 s in all) | The moment that player's `slain` key is set ("...Thank you."). He looks at his killer until he goes limp, then fades. Then he is gone for them. |
 | `leave` (6.0 s) | The moment that player's `left` key is set ("...Monster."). Then he stays rotten for them. |
 | `rotten_idle` (10 s, loops) | Afterwards, for a player who left him: decayed skin, no glow, head no longer follows. |
@@ -84,7 +84,8 @@ Added to Story's registry by this mod. `"armed": true` is true when the player h
 
 What to look for:
 - Idle: he sits on the floor, back to the wall, breathing barely visibly; his eyes glow faintly at each breath; his head follows you within 8 blocks.
-- Hit him in survival: he shakes, his eyes flare, the line shows.
+- Every 36 to 60 seconds, at the end of a breath, he twitches and a little dust falls.
+- Hit him in survival: nothing moves; only the "Won't take. Tried." line shows.
 - Slay: eyes light, go out, he fades with ash and soul smoke, and is gone (no hitbox) for you.
 - Leave: his arm reaches, his hand drops with an ash burst, he rots over a few seconds, and stays rotten and still. Right-clicking him shows the remains line.
 - A second player who hasn't finished with him still sees him waiting.

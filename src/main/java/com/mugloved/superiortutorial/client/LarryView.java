@@ -78,7 +78,7 @@ public final class LarryView {
     public static float glow(Larry larry, float partialTick) {
         double t = endingSeconds(larry, partialTick);
         return switch (larry.clientPhase) {
-            case Larry.PHASE_IDLE -> Math.max(breathGlow(larry), shakeFlare(larry, partialTick));
+            case Larry.PHASE_IDLE -> breathGlow(larry);
             // Slay: his eyes light up (80% by 0.15 s), hold while he is ended, and go out between 1.2 and 1.9 s.
             case Larry.PHASE_SLAY -> 0.8f * smooth(t, 0.0, 0.15) * (1.0f - smooth(t, 1.2, 1.9));
             // Leave: whatever was there goes out between 0.6 and 1.6 s.
@@ -95,13 +95,6 @@ public final class LarryView {
     /** Called by the model each frame with how far the body leans from its resting pose, in degrees. */
     public static void breathFromBody(Larry larry, float bodyLeanDegrees) {
         larry.clientBreath = Mth.clamp(Math.abs(bodyLeanDegrees) / DEEPEST_BREATH, 0.0f, 1.0f);
-    }
-
-    /** When hit: the eyes flare to full at 0.1 s and are back by 0.4 s. */
-    private static float shakeFlare(Larry larry, float partialTick) {
-        double t = (larry.level().getGameTime() - larry.clientShakeStart + partialTick) / 20.0;
-        if (t < 0 || t > 0.4) return 0.0f;
-        return t < 0.1 ? (float) (t / 0.1) : 1.0f - smooth(t, 0.1, 0.4);
     }
 
     /**
