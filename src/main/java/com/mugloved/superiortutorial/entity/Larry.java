@@ -51,6 +51,8 @@ public class Larry extends Mob implements GeoEntity {
     /** How fast his head turns toward the player while Story holds him in a conversation, degrees per tick. */
     private static final float HELD_HEAD_SPEED = 8.0f;
     private static final int LINE_COOLDOWN_TICKS = 60;
+    /** Hits closer together than this make one shake (the swing and the hit both report it). */
+    private static final int SHAKE_DEBOUNCE_TICKS = 6;
     private static final EntityDataAccessor<Float> FACING = SynchedEntityData.defineId(Larry.class, EntityDataSerializers.FLOAT);
     private static final String FACING_TAG = "LarryFacing";
     /** Sent to watching clients when a survival player hits him: he shakes it off. Above vanilla's event ids. */
@@ -89,6 +91,7 @@ public class Larry extends Mob implements GeoEntity {
 
     /** Per-player cooldown for his dry line when hit, so spam-clicking does not spam text. */
     private final Map<UUID, Long> lastHitLine = new HashMap<>();
+    private long lastShakeTick = Long.MIN_VALUE / 2;
 
     public Larry(EntityType<? extends Larry> type, Level level) {
         super(type, level);
@@ -123,20 +126,48 @@ public class Larry extends Mob implements GeoEntity {
     @Override
     public void handleEntityEvent(byte id) {
         if (id == SHAKE_EVENT) {
-            // Only the Larry who is still waiting reacts; to a player who is done with him, nothing happens.
-            if (clientPhase == PHASE_IDLE) {
-                clientShakeStart = level().getGameTime();
-                triggerAnim("shake", "shake");
-                for (int i = 0; i < 5; i++) {
-                    // A little dust shaken loose.
-                    level().addParticle(ParticleTypes.WHITE_ASH,
-                        getX() + (random.nextDouble() - 0.5) * 0.6, getY() + 0.3 + random.nextDouble() * 0.8, getZ() + (random.nextDouble() - 0.5) * 0.6,
-                        0.0, -0.02, 0.0);
-                }
-            }
+            shakeNow();
             return;
         }
         super.handleEntityEvent(id);
+    }
+
+    /**
+     * Client: he shakes it off. Only the Larry who is still waiting reacts; to a player who is done with him,
+     * nothing happens. Called when the server says he was hit, and straight away when the local player swings at him.
+     */
+    public void shakeNow() {
+        if (clientPhase != PHASE_IDLE) return;
+        long now = level().getGameTime();
+        if (now - clientShakeStart < SHAKE_DEBOUNCE_TICKS) return;
+        clientShakeStart = now;
+        com.mugloved.superiortutorial.SuperiorTutorial.LOGGER.info("Larry flinches (client)");
+        triggerAnim("shake", "shake");
+        for (int i = 0; i < 5; i++) {
+            // A little dust shaken loose.
+            level().addParticle(ParticleTypes.WHITE_ASH,
+                getX() + (random.nextDouble() - 0.5) * 0.6, getY() + 0.3 + random.nextDouble() * 0.8, getZ() + (random.nextDouble() - 0.5) * 0.6,
+                0.0, -0.02, 0.0);
+        }
+    }
+
+    /**
+     * Server: a survival player who has not finished with him has hit (or swung at) him. Reached from his own hurt
+     * method and from the attack event, because combat mods can route a swing around either of them.
+     */
+    public void reactToHit(ServerPlayer player) {
+        if (player.getAbilities().instabuild || LarryState.has(player, LarryState.DONE)) return;
+        long now = level().getGameTime();
+        if (now - lastShakeTick >= SHAKE_DEBOUNCE_TICKS) {
+            lastShakeTick = now;
+            com.mugloved.superiortutorial.SuperiorTutorial.LOGGER.info("Larry hit by {}: shaking", player.getGameProfile().getName());
+            level().broadcastEntityEvent(this, SHAKE_EVENT);
+        }
+        Long last = lastHitLine.get(player.getUUID());
+        if (last == null || now - last >= LINE_COOLDOWN_TICKS) {
+            lastHitLine.put(player.getUUID(), now);
+            player.displayClientMessage(Component.translatable("superior_tutorial.larry.hit"), true);
+        }
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -288,15 +319,7 @@ public class Larry extends Mob implements GeoEntity {
             if (!level().isClientSide) discard();
             return true;
         }
-        if (attacker instanceof ServerPlayer player && !LarryState.has(player, LarryState.DONE)) {
-            level().broadcastEntityEvent(this, SHAKE_EVENT);
-            long now = level().getGameTime();
-            Long last = lastHitLine.get(player.getUUID());
-            if (last == null || now - last >= LINE_COOLDOWN_TICKS) {
-                lastHitLine.put(player.getUUID(), now);
-                player.displayClientMessage(Component.translatable("superior_tutorial.larry.hit"), true);
-            }
-        }
+        if (attacker instanceof ServerPlayer player) reactToHit(player);
         return false;
     }
 
