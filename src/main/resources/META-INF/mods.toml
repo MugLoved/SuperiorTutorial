@@ -33,6 +33,13 @@ The optional first cave of Superior: Larry, his bargain, and the class choice. A
     side="BOTH"
 
 [[dependencies.superior_tutorial]]
+    modId="geckolib"
+    mandatory=true
+    versionRange="[4.8,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.superior_tutorial]]
     modId="superiorstory"
     mandatory=true
     versionRange="[0,)"

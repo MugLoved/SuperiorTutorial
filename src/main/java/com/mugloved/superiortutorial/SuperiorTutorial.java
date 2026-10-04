@@ -32,7 +32,7 @@ public final class SuperiorTutorial {
 
     public static final RegistryObject<EntityType<Larry>> LARRY = ENTITIES.register("larry", () ->
         EntityType.Builder.of(Larry::new, MobCategory.MISC)
-            .sized(0.6f, 1.4f)
+            .sized(1.3f, 1.45f)          // his sitting model: about 1.4 wide, 1.2 deep, 1.45 tall
             .fireImmune()
             .clientTrackingRange(10)
             .build(MOD_ID + ":larry"));

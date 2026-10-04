@@ -12,8 +12,14 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 minecraft {
     mappings channel: 'official', version: project.minecraft_version
     runs {
-        client { workingDirectory project.file('run') }
-        server { workingDirectory project.file('run') }
+        // The mixin lines let GeckoLib start when running the game from here (gradlew runClient); the built jar doesn't need them.
+        configureEach {
+            workingDirectory project.file('run')
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+        }
+        client {}
+        server {}
     }
 }
 
@@ -22,18 +28,21 @@ repositories {
     mavenCentral()
 }
 
-// Superior's own mods are not on a public maven: copy superior_story.jar and superior_lib.jar
-// from the pack's mods folder into libs/ (see README).
+// Superior's own mods are not on a public maven, and GeckoLib must match the pack's version exactly:
+// copy superior_story, superior_lib and the geckolib jar from the pack's mods folder into libs/ (see README).
+// File names are matched by how they start, so geckolib-forge-1.20.1-4.8.4.jar works as it is.
 def localJar = { String name ->
-    def jar = file("libs/${name}.jar")
-    if (!jar.exists()) throw new GradleException("Missing libs/${name}.jar - copy it from the Superior pack's mods folder.")
-    return jar
+    def found = fileTree("libs").matching { include "${name}*.jar" }.files
+    if (found.isEmpty()) throw new GradleException("Missing libs/${name}*.jar - copy it from the Superior pack's mods folder.")
+    if (found.size() > 1) throw new GradleException("More than one libs/${name}*.jar - keep only one: ${found*.name}")
+    return found.first()
 }
 
 dependencies {
     minecraft "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
     implementation fg.deobf(files(localJar("superior_story")))
     implementation fg.deobf(files(localJar("superior_lib")))
+    implementation fg.deobf(files(localJar("geckolib")))
 }
 
 jar {
