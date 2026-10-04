@@ -51,12 +51,12 @@ public class Larry extends Mob implements GeoEntity {
     /** How fast his head turns toward the player while Story holds him in a conversation, degrees per tick. */
     private static final float HELD_HEAD_SPEED = 8.0f;
     private static final int LINE_COOLDOWN_TICKS = 60;
-    /** Hits closer together than this make one shake (the swing and the hit both report it). */
-    private static final int SHAKE_DEBOUNCE_TICKS = 6;
     private static final EntityDataAccessor<Float> FACING = SynchedEntityData.defineId(Larry.class, EntityDataSerializers.FLOAT);
     private static final String FACING_TAG = "LarryFacing";
-    /** Sent to watching clients when a survival player hits him: he shakes it off. Above vanilla's event ids. */
-    public static final byte SHAKE_EVENT = 101;
+    /** Length of his idle (breathing) loop, in seconds. */
+    private static final double IDLE_LENGTH = 12.0;
+    /** Longest a twitch may take before he goes back to breathing regardless (it runs 0.9 s). */
+    private static final int TWITCH_TIMEOUT_TICKS = 30;
 
     // What the local player sees. Set by the client (see client.LarryView); unused on the server.
     public static final int PHASE_IDLE = 0;
@@ -70,8 +70,11 @@ public class Larry extends Mob implements GeoEntity {
     public long clientEndingStart = -1;
     /** How strongly his eyes glowed when the ending began, so the leave ending can fade from there. */
     public float clientGlowAtEnding;
-    /** Game time of the last shake, for the eye flare. */
-    public long clientShakeStart = Long.MIN_VALUE / 2;
+    /** Twitching between breaths: whether one is playing, when it began, breaths left until the next, and how far into the current breath he is (seconds, -1 when not tracked). */
+    public boolean clientTwitching;
+    public long clientTwitchStart;
+    public int clientLoopsUntilTwitch;
+    public double clientLoopSeconds = -1;
     /** How far into his breath he is (0 = breathed out, 1 = deepest breath), read off the animated body each frame. */
     public float clientBreath;
     /** Seconds into the ending already handled by the particle effects. */
@@ -82,7 +85,7 @@ public class Larry extends Mob implements GeoEntity {
     public float clientHeadYawAdded, clientHeadPitchAdded;
 
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.larry.idle");
-    private static final RawAnimation SHAKE = RawAnimation.begin().thenPlay("animation.larry.shake");
+    private static final RawAnimation TWITCH = RawAnimation.begin().thenPlay("animation.larry.twitch");
     private static final RawAnimation SLAY = RawAnimation.begin().thenPlayAndHold("animation.larry.slay");
     private static final RawAnimation LEAVE = RawAnimation.begin().thenPlayAndHold("animation.larry.leave");
     private static final RawAnimation ROTTEN = RawAnimation.begin().thenLoop("animation.larry.rotten_idle");
@@ -91,7 +94,6 @@ public class Larry extends Mob implements GeoEntity {
 
     /** Per-player cooldown for his dry line when hit, so spam-clicking does not spam text. */
     private final Map<UUID, Long> lastHitLine = new HashMap<>();
-    private long lastShakeTick = Long.MIN_VALUE / 2;
 
     public Larry(EntityType<? extends Larry> type, Level level) {
         super(type, level);
@@ -103,71 +105,91 @@ public class Larry extends Mob implements GeoEntity {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        // "main" carries his state; "shake" plays over it when he is hit, then hands the bones back.
-        controllers.add(new AnimationController<>(this, "main", 3, this::mainAnimation));
-        controllers.add(new AnimationController<>(this, "shake", 0, state -> PlayState.STOP).triggerableAnim("shake", SHAKE));
+        // One controller carries everything, twitches included, so nothing ever fights over his bones.
+        controllers.add(new MainController(this));
+    }
+
+    /** The main controller, which can also say how far into the current idle loop he is. */
+    private static final class MainController extends AnimationController<Larry> {
+        MainController(Larry larry) {
+            super(larry, "main", 3, larry::mainAnimation);
+        }
+
+        /** Seconds into the current 12 s idle loop, at the given animation tick. */
+        double loopSeconds(double animationTick) {
+            double ticks = Math.max(animationTick - tickOffset, 0.0) * getAnimationSpeed();
+            return (ticks / 20.0) % IDLE_LENGTH;
+        }
     }
 
     private PlayState mainAnimation(AnimationState<Larry> state) {
+        if (clientPhase != PHASE_IDLE) {
+            clientTwitching = false;
+            clientLoopSeconds = -1;
+        }
         return switch (clientPhase) {
             case PHASE_SLAY -> state.setAndContinue(SLAY);
             case PHASE_LEAVE -> state.setAndContinue(LEAVE);
             case PHASE_ROTTEN -> state.setAndContinue(ROTTEN);
             case PHASE_GONE -> PlayState.STOP;
-            default -> state.setAndContinue(IDLE);
+            default -> idleAnimation(state);
         };
     }
 
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return animationCache;
-    }
-
-    @Override
-    public void handleEntityEvent(byte id) {
-        if (id == SHAKE_EVENT) {
-            shakeNow();
-            return;
-        }
-        super.handleEntityEvent(id);
-    }
-
     /**
-     * Client: he shakes it off. Only the Larry who is still waiting reacts; to a player who is done with him,
-     * nothing happens. Called when the server says he was hit, and straight away when the local player swings at him.
+     * Waiting: he breathes, and at the end of every third to fifth breath (one 12 s loop each) a twitch runs
+     * through him, then he breathes on. Not while someone is talking to him.
      */
-    public void shakeNow() {
-        if (clientPhase != PHASE_IDLE) return;
+    private PlayState idleAnimation(AnimationState<Larry> state) {
         long now = level().getGameTime();
-        if (now - clientShakeStart < SHAKE_DEBOUNCE_TICKS) return;
-        clientShakeStart = now;
-        com.mugloved.superiortutorial.SuperiorTutorial.LOGGER.info("Larry flinches (client)");
-        triggerAnim("shake", "shake");
-        for (int i = 0; i < 5; i++) {
-            // A little dust shaken loose.
+        if (clientTwitching) {
+            boolean done = state.isCurrentAnimation(TWITCH) && state.getController().hasAnimationFinished();
+            if (!done && now - clientTwitchStart < TWITCH_TIMEOUT_TICKS) return state.setAndContinue(TWITCH);
+            clientTwitching = false;
+            clientLoopSeconds = -1;
+            return state.setAndContinue(IDLE);
+        }
+        if (state.isCurrentAnimation(IDLE) && state.getController() instanceof MainController main
+            && main.getAnimationState() == AnimationController.State.RUNNING) {
+            double t = main.loopSeconds(state.getAnimationTick());
+            boolean loopEnded = clientLoopSeconds >= 0 && t < clientLoopSeconds - IDLE_LENGTH / 2;
+            clientLoopSeconds = t;
+            if (loopEnded) {
+                if (clientLoopsUntilTwitch <= 0) clientLoopsUntilTwitch = nextTwitchGap();
+                if (--clientLoopsUntilTwitch <= 0) {
+                    clientLoopsUntilTwitch = nextTwitchGap();
+                    // (Held in a conversation: he keeps still, and the count starts over.)
+                    if (!isNoAi()) {
+                        twitch(now);
+                        return state.setAndContinue(TWITCH);
+                    }
+                }
+            }
+        } else {
+            clientLoopSeconds = -1;
+        }
+        return state.setAndContinue(IDLE);
+    }
+
+    private int nextTwitchGap() {
+        return 3 + random.nextInt(3);
+    }
+
+    /** Client: the twitch begins, and a little dust is shaken loose. */
+    private void twitch(long now) {
+        clientTwitching = true;
+        clientTwitchStart = now;
+        clientLoopSeconds = -1;
+        for (int i = 0; i < 4; i++) {
             level().addParticle(ParticleTypes.WHITE_ASH,
                 getX() + (random.nextDouble() - 0.5) * 0.6, getY() + 0.3 + random.nextDouble() * 0.8, getZ() + (random.nextDouble() - 0.5) * 0.6,
                 0.0, -0.02, 0.0);
         }
     }
 
-    /**
-     * Server: a survival player who has not finished with him has hit (or swung at) him. Reached from his own hurt
-     * method and from the attack event, because combat mods can route a swing around either of them.
-     */
-    public void reactToHit(ServerPlayer player) {
-        if (player.getAbilities().instabuild || LarryState.has(player, LarryState.DONE)) return;
-        long now = level().getGameTime();
-        if (now - lastShakeTick >= SHAKE_DEBOUNCE_TICKS) {
-            lastShakeTick = now;
-            com.mugloved.superiortutorial.SuperiorTutorial.LOGGER.info("Larry hit by {}: shaking", player.getGameProfile().getName());
-            level().broadcastEntityEvent(this, SHAKE_EVENT);
-        }
-        Long last = lastHitLine.get(player.getUUID());
-        if (last == null || now - last >= LINE_COOLDOWN_TICKS) {
-            lastHitLine.put(player.getUUID(), now);
-            player.displayClientMessage(Component.translatable("superior_tutorial.larry.hit"), true);
-        }
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return animationCache;
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -319,7 +341,15 @@ public class Larry extends Mob implements GeoEntity {
             if (!level().isClientSide) discard();
             return true;
         }
-        if (attacker instanceof ServerPlayer player) reactToHit(player);
+        if (attacker instanceof ServerPlayer player && !LarryState.has(player, LarryState.DONE)) {
+            // Nothing moves; he just has something to say about it (not every hit).
+            long now = level().getGameTime();
+            Long last = lastHitLine.get(player.getUUID());
+            if (last == null || now - last >= LINE_COOLDOWN_TICKS) {
+                lastHitLine.put(player.getUUID(), now);
+                player.displayClientMessage(Component.translatable("superior_tutorial.larry.hit"), true);
+            }
+        }
         return false;
     }
 
