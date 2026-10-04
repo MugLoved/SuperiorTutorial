@@ -21,6 +21,15 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.core.particles.ParticleTypes;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -28,16 +37,49 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Larry: a skeleton slumped against the cave wall, held to life against his will.
+ * Larry: a corpse slumped against the cave wall, held to life against his will.
  * He never moves, never dies to a survival player, keeps his body facing one way, and turns only his head
  * (up to {@link #MAX_HEAD_TURN} degrees) toward the nearest player who has not finished with him.
  * Everything he says is Story dialogue bound to this entity type.
+ *
+ * <p>How he looks is decided on each player's own screen, from that player's own unlock keys: idle, the slay or
+ * leave ending as it plays, rotten afterwards, or gone. The client keeps that in the {@code client*} fields below
+ * (plain values, so this class never touches client-only code); the server never reads them.
  */
-public class Larry extends Mob {
+public class Larry extends Mob implements GeoEntity {
     public static final float MAX_HEAD_TURN = 70.0f;
     private static final int LINE_COOLDOWN_TICKS = 60;
     private static final EntityDataAccessor<Float> FACING = SynchedEntityData.defineId(Larry.class, EntityDataSerializers.FLOAT);
     private static final String FACING_TAG = "LarryFacing";
+    /** Sent to watching clients when a survival player hits him: he shakes it off. Above vanilla's event ids. */
+    public static final byte SHAKE_EVENT = 101;
+
+    // What the local player sees. Set by the client (see client.LarryView); unused on the server.
+    public static final int PHASE_IDLE = 0;
+    public static final int PHASE_SLAY = 1;
+    public static final int PHASE_LEAVE = 2;
+    public static final int PHASE_ROTTEN = 3;
+    public static final int PHASE_GONE = 4;
+    public int clientPhase = PHASE_IDLE;
+    /** The ending playing for the local player ({@link #PHASE_SLAY} or {@link #PHASE_LEAVE}), and when it began (game time), or -1. */
+    public int clientEnding = PHASE_IDLE;
+    public long clientEndingStart = -1;
+    /** How strongly his eyes glowed when the ending began, so the leave ending can fade from there. */
+    public float clientGlowAtEnding;
+    /** Game time of the last shake, for the eye flare. */
+    public long clientShakeStart = Long.MIN_VALUE / 2;
+    /** How far into his breath he is (0 = breathed out, 1 = deepest breath), read off the animated body each frame. */
+    public float clientBreath;
+    /** Seconds into the ending already handled by the particle effects. */
+    public double clientEffectsDone;
+
+    private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.larry.idle");
+    private static final RawAnimation SHAKE = RawAnimation.begin().thenPlay("animation.larry.shake");
+    private static final RawAnimation SLAY = RawAnimation.begin().thenPlayAndHold("animation.larry.slay");
+    private static final RawAnimation LEAVE = RawAnimation.begin().thenPlayAndHold("animation.larry.leave");
+    private static final RawAnimation ROTTEN = RawAnimation.begin().thenLoop("animation.larry.rotten_idle");
+
+    private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
 
     /** Per-player cooldown for his dry line when hit, so spam-clicking does not spam text. */
     private final Map<UUID, Long> lastHitLine = new HashMap<>();
@@ -46,6 +88,49 @@ public class Larry extends Mob {
         super(type, level);
         setPersistenceRequired();
         setNoGravity(true);
+    }
+
+    // ---- Animation ---------------------------------------------------------------------------------------------
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        // "main" carries his state; "shake" plays over it when he is hit, then hands the bones back.
+        controllers.add(new AnimationController<>(this, "main", 3, this::mainAnimation));
+        controllers.add(new AnimationController<>(this, "shake", 0, state -> PlayState.STOP).triggerableAnim("shake", SHAKE));
+    }
+
+    private PlayState mainAnimation(AnimationState<Larry> state) {
+        return switch (clientPhase) {
+            case PHASE_SLAY -> state.setAndContinue(SLAY);
+            case PHASE_LEAVE -> state.setAndContinue(LEAVE);
+            case PHASE_ROTTEN -> state.setAndContinue(ROTTEN);
+            case PHASE_GONE -> PlayState.STOP;
+            default -> state.setAndContinue(IDLE);
+        };
+    }
+
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return animationCache;
+    }
+
+    @Override
+    public void handleEntityEvent(byte id) {
+        if (id == SHAKE_EVENT) {
+            // Only the Larry who is still waiting reacts; to a player who is done with him, nothing happens.
+            if (clientPhase == PHASE_IDLE) {
+                clientShakeStart = level().getGameTime();
+                triggerAnim("shake", "shake");
+                for (int i = 0; i < 5; i++) {
+                    // A little dust shaken loose.
+                    level().addParticle(ParticleTypes.WHITE_ASH,
+                        getX() + (random.nextDouble() - 0.5) * 0.6, getY() + 0.3 + random.nextDouble() * 0.8, getZ() + (random.nextDouble() - 0.5) * 0.6,
+                        0.0, -0.02, 0.0);
+                }
+            }
+            return;
+        }
+        super.handleEntityEvent(id);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -179,6 +264,7 @@ public class Larry extends Mob {
             return true;
         }
         if (attacker instanceof ServerPlayer player && !LarryState.has(player, LarryState.DONE)) {
+            level().broadcastEntityEvent(this, SHAKE_EVENT);
             long now = level().getGameTime();
             Long last = lastHitLine.get(player.getUUID());
             if (last == null || now - last >= LINE_COOLDOWN_TICKS) {
