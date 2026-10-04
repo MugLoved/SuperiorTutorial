@@ -47,7 +47,9 @@ import java.util.UUID;
  * (plain values, so this class never touches client-only code); the server never reads them.
  */
 public class Larry extends Mob implements GeoEntity {
-    public static final float MAX_HEAD_TURN = 70.0f;
+    public static final float MAX_HEAD_TURN = 35.0f;
+    /** How fast his head turns toward the player while Story holds him in a conversation, degrees per tick. */
+    private static final float HELD_HEAD_SPEED = 8.0f;
     private static final int LINE_COOLDOWN_TICKS = 60;
     private static final EntityDataAccessor<Float> FACING = SynchedEntityData.defineId(Larry.class, EntityDataSerializers.FLOAT);
     private static final String FACING_TAG = "LarryFacing";
@@ -72,6 +74,10 @@ public class Larry extends Mob implements GeoEntity {
     public float clientBreath;
     /** Seconds into the ending already handled by the particle effects. */
     public double clientEffectsDone;
+    /** How much he is looking at someone (0 to 1, eased over about half a second), this tick and the last. */
+    public float clientEngage, clientEngageO;
+    /** The head turn (radians) the model added on top of the animation in the last world frame. */
+    public float clientHeadYawAdded, clientHeadPitchAdded;
 
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.larry.idle");
     private static final RawAnimation SHAKE = RawAnimation.begin().thenPlay("animation.larry.shake");
@@ -174,7 +180,24 @@ public class Larry extends Mob implements GeoEntity {
             entityData.set(FACING, Mth.wrapDegrees(yaw));
         }
         super.tick();
+        if (!level().isClientSide && anchored() && isNoAi()) watchWhileHeld();
         holdPose();
+    }
+
+    /**
+     * Story holds a speaker still during a conversation by switching its AI off, and then points its head straight
+     * along its body every tick. Larry keeps looking at the player himself instead (Story's head turns are ignored
+     * while he is held, see {@link #setYHeadRot}). After his ending the player is no longer someone he watches, so
+     * his head simply stays where it was; the client lets it go as part of the ending.
+     */
+    private void watchWhileHeld() {
+        Player target = WatchGoal.nearest(this);
+        if (target == null) return;
+        double dx = target.getX() - getX();
+        double dz = target.getZ() - getZ();
+        float wanted = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90.0f;
+        float head = yHeadRot + Mth.clamp(Mth.wrapDegrees(wanted - yHeadRot), -HELD_HEAD_SPEED, HELD_HEAD_SPEED);
+        super.setYHeadRot(clampHead(head, facing()));
     }
 
     /** Puts the body back on its facing and keeps the head within reach of it. Runs on both sides every tick. */
@@ -205,6 +228,8 @@ public class Larry extends Mob implements GeoEntity {
 
     @Override
     public void setYHeadRot(float yaw) {
+        // While Story holds him (AI off), it keeps pointing his head forward; he looks at the player instead.
+        if (anchored() && !level().isClientSide && isNoAi()) return;
         super.setYHeadRot(anchored() ? clampHead(yaw, facing()) : yaw);
     }
 
@@ -381,6 +406,11 @@ public class Larry extends Mob implements GeoEntity {
         }
 
         private Player nearest() {
+            return nearest(larry);
+        }
+
+        /** The nearest player within reach who has not finished with him, or null. */
+        static Player nearest(Larry larry) {
             Player best = null;
             double bestDistance = RANGE * RANGE;
             for (Player player : larry.level().players()) {

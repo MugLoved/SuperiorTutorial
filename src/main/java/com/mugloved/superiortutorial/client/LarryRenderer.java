@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.core.object.Color;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
@@ -42,11 +43,49 @@ public class LarryRenderer extends GeoEntityRenderer<Larry> {
         if (LarryView.update(larry, partialTick) == Larry.PHASE_GONE) return;
         // His shadow fades with him (the game draws it after this, from this value).
         shadowStrength = LarryView.alpha(larry, partialTick);
+        boolean portrait = isPortrait(larry);
         float facing = larry.yBodyRot * Mth.DEG_TO_RAD;
         pose.pushPose();
         pose.translate(-Mth.sin(facing) * FORWARD, LIFT, Mth.cos(facing) * FORWARD);
-        super.render(larry, yaw, partialTick, pose, buffers, light);
-        pose.popPose();
+        if (!portrait) LarryStain.render(larry, partialTick, pose, buffers, light);
+        GeoBone head = portrait ? getGeoModel().getBakedModel(getGeoModel().getModelResource(larry)).getBone("head").orElse(null) : null;
+        if (head != null) {
+            // Looking straight out of the portrait: take off the turn toward the player, put it back afterwards.
+            head.setRotX(head.getRotX() - larry.clientHeadPitchAdded);
+            head.setRotY(head.getRotY() - larry.clientHeadYawAdded);
+        }
+        try {
+            super.render(larry, yaw, partialTick, pose, buffers, light);
+        } finally {
+            if (head != null) {
+                head.setRotX(head.getRotX() + larry.clientHeadPitchAdded);
+                head.setRotY(head.getRotY() + larry.clientHeadYawAdded);
+            }
+            pose.popPose();
+        }
+    }
+
+    /**
+     * The dialogue portrait draws him by turning his body toward the camera for a moment (and, to the animation
+     * system, from a frozen point in time). In the world his body always faces exactly his facing, so a different
+     * body turn means the portrait.
+     */
+    private static boolean isPortrait(Larry larry) {
+        float facing = larry.facing();
+        return !Float.isNaN(facing) && Math.abs(Mth.wrapDegrees(larry.yBodyRot - facing)) > 0.5f;
+    }
+
+    /**
+     * In the portrait he is drawn in whatever pose the world last gave him: running his animations from the
+     * portrait's frozen clock would drag them back in time every frame (which is what made his head spin and
+     * his slay ending stall while the last line was still on screen).
+     */
+    @Override
+    public void actuallyRender(PoseStack pose, Larry larry, BakedGeoModel model, RenderType type, MultiBufferSource buffers,
+                               VertexConsumer buffer, boolean isReRender, float partialTick, int light, int overlay,
+                               float red, float green, float blue, float alpha) {
+        super.actuallyRender(pose, larry, model, type, buffers, buffer, isReRender || isPortrait(larry), partialTick,
+            light, overlay, red, green, blue, alpha);
     }
 
     /** While he fades away (end of the slay ending) he is drawn see-through. */

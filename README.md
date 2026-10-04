@@ -20,7 +20,7 @@ The player starts in a small, old cave that was never cleared. Larry, a corpse h
 
 - Entity `superior_tutorial:larry`, with a spawn egg in the Spawn Eggs creative tab.
 - Never moves and cannot be pushed, leashed, burned or killed by a survival player. A survival hit gets one dry line on the action bar instead. A creative-mode hit removes him, for editing the cave. `/kill` and the void still work.
-- His body keeps one facing; only his head turns (up to 70 degrees) toward the nearest player within 8 blocks who has not finished with him. When first placed, he faces the nearest player, so place him with the egg while standing where he should look. Rotated structures turn him with them.
+- His body keeps one facing; only his head turns (up to 35 degrees each way) toward the nearest player within 8 blocks who has not finished with him, lifting it to their eye level. He keeps looking at the player while talking (Story switches his AI off and points his head forward during a conversation; Larry ignores that and turns his head himself). When first placed, he faces the nearest player, so place him with the egg while standing where he should look. Rotated structures turn him with them.
 - Persistent: never despawns.
 - Size: 1.3 wide, 1.45 tall (his sitting model). He is drawn two pixels forward of his block's centre so his back rests against a wall behind it; place him in the block in front of the wall.
 
@@ -32,18 +32,19 @@ Mug's GeckoLib model (`geo/entity/larry.geo.json`), his two skins (`textures/ent
 | --- | --- |
 | `idle` (12 s, loops) | He is waiting. He breathes so faintly you can't tell at a glance; his eyes glow with each breath, up to 40%. His head follows the player on top of it. |
 | `shake` (0.9 s) | A survival player hits him (with the "Won't take. Tried." line). Plays over idle; his eyes flare, a little dust falls. Only a player still waiting on him sees it. |
-| `slay` (2.8 s) | The moment that player's `slain` key is set ("...Thank you."). Then he is gone for them. |
+| `slay` (2.8 s, then held while he fades: 4.4 s in all) | The moment that player's `slain` key is set ("...Thank you."). He looks at his killer until he goes limp, then fades. Then he is gone for them. |
 | `leave` (6.0 s) | The moment that player's `left` key is set ("...Monster."). Then he stays rotten for them. |
 | `rotten_idle` (10 s, loops) | Afterwards, for a player who left him: decayed skin, no glow, head no longer follows. |
 
-His head stops following the player over half a second when an ending starts. Joining a world where the ending already happened just shows the result (gone, or rotten), without replaying it.
+His head lets go of the player as part of each ending (slay: as he goes limp; leave: as he reaches out). In the dialogue portrait he is drawn in his current pose, looking straight out. Joining a world where the ending already happened just shows the result (gone, or rotten), without replaying it.
 
 ### Ending effects
 
 Quiet on purpose (no ceremony): nothing flashes or rises into the sky.
 
-- **Slay:** his eyes light up as he is ended, then go out (a few soul flecks leave his face). He fades away while ash comes off him; as he goes limp, soul smoke from his chest and a thin trail of souls for a moment. His shadow fades with him.
-- **Leave:** his eyes go out. As his hand drops, a burst of ash and bone dust; the decayed skin creeps over him while the flesh he loses fades away, and ash and dust keep sifting off him until he has rotted. Afterwards a flake of ash falls off him now and then.
+- **Slay:** his eyes light up as he is ended and a low ring of pale light settles on the floor around him. The light goes out of his eyes (soul flecks leave his face). As he goes limp, a last breath of ash and smoke from his mouth and soul smoke from his chest. Then he fades while ash and bone dust fall away and a thin trail of souls rises; a small fall of dust where he sat. His shadow fades with him.
+- **Leave:** his eyes go out. As his hand drops, a cold cloud of dust rolls out low over the floor with a burst of ash, bone dust and dark flakes; the decayed skin creeps over him while the flesh he loses fades away, ash, dust and flakes keep sifting off him, and a dark stain soaks into the floor under him (`larry_stain.png`), which stays. Afterwards a flake of ash or a dark fleck falls off him now and then.
+- Sounds for both endings are planned through Superior Sounds (not in this mod).
 
 `larry_leave_base.png` and `larry_leave_flesh.png` are made from the two skins (the parts they share, and the flesh only the normal skin has), so the leave ending can fade the lost flesh smoothly. If either skin changes, they need making again.
 
