@@ -25,8 +25,8 @@ public class LarryModel extends GeoModel<Larry> {
      */
     static final ResourceLocation LEAVE_BASE = id("textures/entity/larry_leave_base.png");
     static final ResourceLocation LEAVE_FLESH = id("textures/entity/larry_leave_flesh.png");
-    /** He looks up and down at the player only half as far as he turns: his neck is not what it was. */
-    private static final float PITCH_SHARE = 0.5f;
+    /** He follows the player up and down a little less than fully: his neck is not what it was. */
+    private static final float PITCH_SHARE = 0.75f;
 
     private static ResourceLocation id(String path) {
         return new ResourceLocation(SuperiorTutorial.MOD_ID, path);
@@ -65,9 +65,18 @@ public class LarryModel extends GeoModel<Larry> {
         CoreGeoBone head = getAnimationProcessor().getBone("head");
         EntityModelData data = state.getData(DataTickets.ENTITY_MODEL_DATA);
         float follow = LarryView.headFollow(larry, state.getPartialTick());
+        float yaw = 0.0f;
+        float pitch = 0.0f;
         if (head != null && data != null && follow > 0.0f) {
-            head.setRotX(head.getRotX() + data.headPitch() * PITCH_SHARE * follow * Mth.DEG_TO_RAD);
-            head.setRotY(head.getRotY() + data.netHeadYaw() * follow * Mth.DEG_TO_RAD);
+            // His head hangs forward at rest, so when someone is in front of him he lifts it to their eyes.
+            float lift = LarryView.LOOK_UP * LarryView.engage(larry, state.getPartialTick());
+            pitch = (data.headPitch() * PITCH_SHARE + lift) * follow * Mth.DEG_TO_RAD;
+            yaw = data.netHeadYaw() * follow * Mth.DEG_TO_RAD;
+            head.setRotX(head.getRotX() + pitch);
+            head.setRotY(head.getRotY() + yaw);
         }
+        // Remembered so the dialogue portrait can show him looking straight out (see LarryRenderer).
+        larry.clientHeadPitchAdded = pitch;
+        larry.clientHeadYawAdded = yaw;
     }
 }
