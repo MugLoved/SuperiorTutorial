@@ -1,43 +1,43 @@
 {
-  "npc": "superior_tutorial:larry",
+  "npc": "superior_tutorial:decaying_corpse",
   "chat": true,
   "priority": 1,
-  "unless": { "unlocked": "superior_tutorial_larry_done" },
+  "unless": { "unlocked": "superior_tutorial_decaying_corpse_done" },
   "beats": [
     {
-      "text": { "translate": "superior_tutorial.larry.meet.1" },
+      "text": { "translate": "superior_tutorial.decaying_corpse.meet.1" },
       "choices": [
         { "translate": "superior_tutorial.choice.go_on" },
         { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "end" }
       ]
     },
     {
-      "text": { "translate": "superior_tutorial.larry.meet.2" },
+      "text": { "translate": "superior_tutorial.decaying_corpse.meet.2" },
       "choices": [
         { "translate": "superior_tutorial.choice.go_on" },
         { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "end" }
       ]
     },
     {
-      "text": { "translate": "superior_tutorial.larry.meet.3" },
+      "text": { "translate": "superior_tutorial.decaying_corpse.meet.3" },
       "choices": [
         { "translate": "superior_tutorial.choice.go_on" },
         { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "end" }
       ]
     },
     {
-      "text": { "translate": "superior_tutorial.larry.meet.4" },
+      "text": { "translate": "superior_tutorial.decaying_corpse.meet.4" },
       "choices": [
         { "translate": "superior_tutorial.choice.go_on" },
         { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "end" }
       ]
     },
     {
-      "text": { "translate": "superior_tutorial.larry.meet.5" },
+      "text": { "translate": "superior_tutorial.decaying_corpse.meet.5" },
       "choices": [
         {
           "text": { "translate": "superior_tutorial.choice.deal" },
-          "unlock": { "key": "superior_tutorial_larry_bargain", "notify": false },
+          "unlock": { "key": "superior_tutorial_decaying_corpse_bargain", "notify": false },
           "goto": "end"
         },
         { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "end" }

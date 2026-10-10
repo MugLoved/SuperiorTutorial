@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Larry: a corpse slumped against the cave wall, held to life against his will.
+ * the Corpse: a corpse slumped against the cave wall, held to life against his will.
  * He never moves, never dies to a survival player, keeps his body facing one way, and turns only his head
  * (up to {@link #MAX_HEAD_TURN} degrees) toward the nearest player who has not finished with him.
  * Everything he says is Story dialogue bound to this entity type.
@@ -46,19 +46,19 @@ import java.util.UUID;
  * leave ending as it plays, rotten afterwards, or gone. The client keeps that in the {@code client*} fields below
  * (plain values, so this class never touches client-only code); the server never reads them.
  */
-public class Larry extends Mob implements GeoEntity {
+public class DecayingCorpse extends Mob implements GeoEntity {
     public static final float MAX_HEAD_TURN = 35.0f;
     /** How fast his head turns toward the player while Story holds him in a conversation, degrees per tick. */
     private static final float HELD_HEAD_SPEED = 8.0f;
     private static final int LINE_COOLDOWN_TICKS = 60;
-    private static final EntityDataAccessor<Float> FACING = SynchedEntityData.defineId(Larry.class, EntityDataSerializers.FLOAT);
-    private static final String FACING_TAG = "LarryFacing";
+    private static final EntityDataAccessor<Float> FACING = SynchedEntityData.defineId(DecayingCorpse.class, EntityDataSerializers.FLOAT);
+    private static final String FACING_TAG = "Decaying CorpseFacing";
     /** Length of his idle (breathing) loop, in seconds. */
     private static final double IDLE_LENGTH = 12.0;
     /** Longest a twitch may take before he goes back to breathing regardless (it runs 0.9 s). */
     private static final int TWITCH_TIMEOUT_TICKS = 30;
 
-    // What the local player sees. Set by the client (see client.LarryView); unused on the server.
+    // What the local player sees. Set by the client (see client.DecayingCorpseView); unused on the server.
     public static final int PHASE_IDLE = 0;
     public static final int PHASE_SLAY = 1;
     public static final int PHASE_LEAVE = 2;
@@ -84,18 +84,18 @@ public class Larry extends Mob implements GeoEntity {
     /** The head turn (radians) the model added on top of the animation in the last world frame. */
     public float clientHeadYawAdded, clientHeadPitchAdded;
 
-    private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.larry.idle");
-    private static final RawAnimation TWITCH = RawAnimation.begin().thenPlay("animation.larry.twitch");
-    private static final RawAnimation SLAY = RawAnimation.begin().thenPlayAndHold("animation.larry.slay");
-    private static final RawAnimation LEAVE = RawAnimation.begin().thenPlayAndHold("animation.larry.leave");
-    private static final RawAnimation ROTTEN = RawAnimation.begin().thenLoop("animation.larry.rotten_idle");
+    private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.decaying_corpse.idle");
+    private static final RawAnimation TWITCH = RawAnimation.begin().thenPlay("animation.decaying_corpse.twitch");
+    private static final RawAnimation SLAY = RawAnimation.begin().thenPlayAndHold("animation.decaying_corpse.slay");
+    private static final RawAnimation LEAVE = RawAnimation.begin().thenPlayAndHold("animation.decaying_corpse.leave");
+    private static final RawAnimation ROTTEN = RawAnimation.begin().thenLoop("animation.decaying_corpse.rotten_idle");
 
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
 
     /** Per-player cooldown for his dry line when hit, so spam-clicking does not spam text. */
     private final Map<UUID, Long> lastHitLine = new HashMap<>();
 
-    public Larry(EntityType<? extends Larry> type, Level level) {
+    public DecayingCorpse(EntityType<? extends DecayingCorpse> type, Level level) {
         super(type, level);
         setPersistenceRequired();
         setNoGravity(true);
@@ -110,9 +110,9 @@ public class Larry extends Mob implements GeoEntity {
     }
 
     /** The main controller, which can also say how far into the current idle loop he is. */
-    private static final class MainController extends AnimationController<Larry> {
-        MainController(Larry larry) {
-            super(larry, "main", 3, larry::mainAnimation);
+    private static final class MainController extends AnimationController<DecayingCorpse> {
+        MainController(DecayingCorpse corpse) {
+            super(corpse, "main", 3, corpse::mainAnimation);
         }
 
         /** Seconds into the current 12 s idle loop, at the given animation tick. */
@@ -122,7 +122,7 @@ public class Larry extends Mob implements GeoEntity {
         }
     }
 
-    private PlayState mainAnimation(AnimationState<Larry> state) {
+    private PlayState mainAnimation(AnimationState<DecayingCorpse> state) {
         if (clientPhase != PHASE_IDLE) {
             clientTwitching = false;
             clientLoopSeconds = -1;
@@ -140,7 +140,7 @@ public class Larry extends Mob implements GeoEntity {
      * Waiting: he breathes, and at the end of every third to fifth breath (one 12 s loop each) a twitch runs
      * through him, then he breathes on. Not while someone is talking to him.
      */
-    private PlayState idleAnimation(AnimationState<Larry> state) {
+    private PlayState idleAnimation(AnimationState<DecayingCorpse> state) {
         long now = level().getGameTime();
         if (clientTwitching) {
             boolean done = state.isCurrentAnimation(TWITCH) && state.getController().hasAnimationFinished();
@@ -239,7 +239,7 @@ public class Larry extends Mob implements GeoEntity {
 
     /**
      * Story holds a speaker still during a conversation by switching its AI off, and then points its head straight
-     * along its body every tick. Larry keeps looking at the player himself instead (Story's head turns are ignored
+     * along its body every tick. the Corpse keeps looking at the player himself instead (Story's head turns are ignored
      * while he is held, see {@link #setYHeadRot}). After his ending the player is no longer someone he watches, so
      * his head simply stays where it was; the client lets it go as part of the ending.
      */
@@ -341,13 +341,13 @@ public class Larry extends Mob implements GeoEntity {
             if (!level().isClientSide) discard();
             return true;
         }
-        if (attacker instanceof ServerPlayer player && !LarryState.has(player, LarryState.DONE)) {
+        if (attacker instanceof ServerPlayer player && !DecayingCorpseState.has(player, DecayingCorpseState.DONE)) {
             // Nothing moves; he just has something to say about it (not every hit).
             long now = level().getGameTime();
             Long last = lastHitLine.get(player.getUUID());
             if (last == null || now - last >= LINE_COOLDOWN_TICKS) {
                 lastHitLine.put(player.getUUID(), now);
-                player.displayClientMessage(Component.translatable("superior_tutorial.larry.hit"), true);
+                player.displayClientMessage(Component.translatable("superior_tutorial.decaying_corpse.hit"), true);
             }
         }
         return false;
@@ -399,7 +399,7 @@ public class Larry extends Mob implements GeoEntity {
     /** A player who ended him can no longer aim at him; to them he is gone. */
     @Override
     public boolean isPickable() {
-        if (level().isClientSide && LarryState.slainHere()) return false;
+        if (level().isClientSide && DecayingCorpseState.slainHere()) return false;
         return super.isPickable();
     }
 
@@ -408,22 +408,22 @@ public class Larry extends Mob implements GeoEntity {
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
-        if (player instanceof ServerPlayer server && LarryState.has(server, LarryState.LEFT)) {
-            server.displayClientMessage(Component.translatable("superior_tutorial.larry.remains"), true);
+        if (player instanceof ServerPlayer server && DecayingCorpseState.has(server, DecayingCorpseState.LEFT)) {
+            server.displayClientMessage(Component.translatable("superior_tutorial.decaying_corpse.remains"), true);
             return InteractionResult.SUCCESS;
         }
-        return level().isClientSide && LarryState.leftHere() ? InteractionResult.SUCCESS : InteractionResult.PASS;
+        return level().isClientSide && DecayingCorpseState.leftHere() ? InteractionResult.SUCCESS : InteractionResult.PASS;
     }
 
     /** Turns his head toward the nearest player in reach who has not finished with him. */
     private static final class WatchGoal extends Goal {
         private static final double RANGE = 8.0;
-        private final Larry larry;
+        private final DecayingCorpse corpse;
         private Player target;
         private int recheck;
 
-        WatchGoal(Larry larry) {
-            this.larry = larry;
+        WatchGoal(DecayingCorpse corpse) {
+            this.corpse = corpse;
             setFlags(EnumSet.of(Flag.LOOK));
         }
 
@@ -435,7 +435,7 @@ public class Larry extends Mob implements GeoEntity {
 
         @Override
         public boolean canContinueToUse() {
-            return target != null && target.isAlive() && eligible(target) && larry.distanceToSqr(target) <= RANGE * RANGE * 1.5;
+            return target != null && target.isAlive() && eligible(target) && corpse.distanceToSqr(target) <= RANGE * RANGE * 1.5;
         }
 
         @Override
@@ -455,20 +455,20 @@ public class Larry extends Mob implements GeoEntity {
                 Player nearer = nearest();
                 if (nearer != null) target = nearer;
             }
-            if (target != null) larry.getLookControl().setLookAt(target.getX(), target.getEyeY(), target.getZ());
+            if (target != null) corpse.getLookControl().setLookAt(target.getX(), target.getEyeY(), target.getZ());
         }
 
         private Player nearest() {
-            return nearest(larry);
+            return nearest(corpse);
         }
 
         /** The nearest player within reach who has not finished with him, or null. */
-        static Player nearest(Larry larry) {
+        static Player nearest(DecayingCorpse corpse) {
             Player best = null;
             double bestDistance = RANGE * RANGE;
-            for (Player player : larry.level().players()) {
+            for (Player player : corpse.level().players()) {
                 if (!eligible(player)) continue;
-                double distance = larry.distanceToSqr(player);
+                double distance = corpse.distanceToSqr(player);
                 if (distance <= bestDistance) {
                     bestDistance = distance;
                     best = player;
@@ -479,7 +479,7 @@ public class Larry extends Mob implements GeoEntity {
 
         private static boolean eligible(Player player) {
             if (player.isSpectator()) return false;
-            return !(player instanceof ServerPlayer server) || !LarryState.has(server, LarryState.DONE);
+            return !(player instanceof ServerPlayer server) || !DecayingCorpseState.has(server, DecayingCorpseState.DONE);
         }
     }
 }

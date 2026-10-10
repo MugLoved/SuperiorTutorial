@@ -1,8 +1,8 @@
 package com.mugloved.superiortutorial.client;
 
 import com.mugloved.superiortutorial.SuperiorTutorial;
-import com.mugloved.superiortutorial.entity.Larry;
-import com.mugloved.superiortutorial.entity.LarryState;
+import com.mugloved.superiortutorial.entity.DecayingCorpse;
+import com.mugloved.superiortutorial.entity.DecayingCorpseState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraftforge.api.distmarker.Dist;
@@ -11,7 +11,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Client wiring: Larry's renderer, and starting his ending when the local player's state changes. */
+/** Client wiring: the Corpse's renderer, and starting his ending when the local player's state changes. */
 public final class TutorialClient {
     private TutorialClient() {}
 
@@ -19,7 +19,7 @@ public final class TutorialClient {
     public static final class ModEvents {
         @SubscribeEvent
         public static void renderers(EntityRenderersEvent.RegisterRenderers event) {
-            event.registerEntityRenderer(SuperiorTutorial.LARRY.get(), LarryRenderer::new);
+            event.registerEntityRenderer(SuperiorTutorial.DECAYING_CORPSE.get(), DecayingCorpseRenderer::new);
         }
     }
 
@@ -54,28 +54,28 @@ public final class TutorialClient {
                 lastState = -1;
                 settleTicks = 100;
             }
-            int state = LarryState.slainHere() ? 2 : LarryState.leftHere() ? 1 : 0;
-            var nearby = level.getEntitiesOfClass(Larry.class, minecraft.player.getBoundingBox().inflate(48.0));
+            int state = DecayingCorpseState.slainHere() ? 2 : DecayingCorpseState.leftHere() ? 1 : 0;
+            var nearby = level.getEntitiesOfClass(DecayingCorpse.class, minecraft.player.getBoundingBox().inflate(48.0));
             if (settleTicks > 0) {
                 settleTicks--;
             } else if (lastState != -1 && state != lastState) {
-                for (Larry larry : nearby) {
+                for (DecayingCorpse corpse : nearby) {
                     if (state > lastState) {
                         // The ending was just chosen: play it from the start.
-                        LarryView.update(larry, 0.0f);
-                        larry.clientGlowAtEnding = LarryView.glow(larry, 0.0f);
-                        larry.clientEnding = state == 2 ? Larry.PHASE_SLAY : Larry.PHASE_LEAVE;
-                        larry.clientEndingStart = level.getGameTime() + BLEND_TICKS;
-                        larry.clientEffectsDone = 0.0;
+                        DecayingCorpseView.update(corpse, 0.0f);
+                        corpse.clientGlowAtEnding = DecayingCorpseView.glow(corpse, 0.0f);
+                        corpse.clientEnding = state == 2 ? DecayingCorpse.PHASE_SLAY : DecayingCorpse.PHASE_LEAVE;
+                        corpse.clientEndingStart = level.getGameTime() + BLEND_TICKS;
+                        corpse.clientEffectsDone = 0.0;
                     } else {
                         // Keys taken back (testing with /superior_lib lock): he is simply waiting again.
-                        larry.clientEnding = Larry.PHASE_IDLE;
-                        larry.clientEndingStart = -1;
+                        corpse.clientEnding = DecayingCorpse.PHASE_IDLE;
+                        corpse.clientEndingStart = -1;
                     }
                 }
             }
             lastState = state;
-            for (Larry larry : nearby) LarryEffects.tick(level, larry);
+            for (DecayingCorpse corpse : nearby) DecayingCorpseEffects.tick(level, corpse);
         }
     }
 }
