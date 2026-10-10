@@ -52,7 +52,7 @@ public class DecayingCorpse extends Mob implements GeoEntity {
     private static final float HELD_HEAD_SPEED = 8.0f;
     private static final int LINE_COOLDOWN_TICKS = 60;
     private static final EntityDataAccessor<Float> FACING = SynchedEntityData.defineId(DecayingCorpse.class, EntityDataSerializers.FLOAT);
-    private static final String FACING_TAG = "Decaying CorpseFacing";
+    private static final String FACING_TAG = "DecayingCorpseFacing";
     /** Length of his idle (breathing) loop, in seconds. */
     private static final double IDLE_LENGTH = 12.0;
     /** Longest a twitch may take before he goes back to breathing regardless (it runs 0.9 s). */

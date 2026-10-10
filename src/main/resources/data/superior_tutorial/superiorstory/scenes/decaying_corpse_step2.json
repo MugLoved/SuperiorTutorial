@@ -1,148 +1,58 @@
 {
   "npc": "superior_tutorial:decaying_corpse",
   "chat": true,
-  "priority": 1,
+  "priority": 2,
+  "if": {
+    "unlocked": "superior_tutorial_decaying_corpse_step2"
+  },
   "unless": {
     "unlocked": "superior_tutorial_decaying_corpse_done"
   },
   "beats": [
     {
       "text": {
-        "translate": "superior_tutorial.decaying_corpse.s1.1"
+        "translate": "superior_tutorial.decaying_corpse.s2.1"
       }
     },
     {
       "text": {
-        "translate": "superior_tutorial.decaying_corpse.s1.2"
+        "translate": "superior_tutorial.decaying_corpse.s2.2"
       }
     },
     {
       "text": {
-        "translate": "superior_tutorial.decaying_corpse.s1.3"
-      }
-    },
-    {
-      "text": {
-        "translate": "superior_tutorial.decaying_corpse.s1.4"
+        "translate": "superior_tutorial.decaying_corpse.s2.3"
       },
       "choices": [
         {
           "text": {
-            "translate": "superior_tutorial.choice.what_about_it"
+            "translate": "superior_tutorial.choice.ill_do_it"
           },
-          "goto": "s2",
+          "goto": "s3",
           "outcome": "good",
+          "corpse_satchel": true,
           "unlock": {
-            "key": "superior_tutorial_decaying_corpse_step2",
+            "key": "superior_tutorial_decaying_corpse_bargain",
             "notify": false
           }
         },
         {
           "text": {
-            "translate": "superior_tutorial.choice.who_are_you"
+            "translate": "superior_tutorial.choice.whats_in_it"
           },
-          "goto": "s1_who"
+          "goto": "s2_pay"
         },
         {
           "text": {
-            "translate": "superior_tutorial.choice.cant_help"
+            "translate": "superior_tutorial.choice.someone_else"
           },
-          "goto": "s1_no",
+          "goto": "s2_no",
           "outcome": "bad"
         }
       ]
     }
   ],
   "branches": {
-    "s1_who": [
-      {
-        "text": {
-          "translate": "superior_tutorial.decaying_corpse.s1.who.1"
-        }
-      },
-      {
-        "text": {
-          "translate": "superior_tutorial.decaying_corpse.s1.who.2"
-        },
-        "choices": [
-          {
-            "text": {
-              "translate": "superior_tutorial.choice.what_about_it"
-            },
-            "goto": "s2",
-            "outcome": "good",
-            "unlock": {
-              "key": "superior_tutorial_decaying_corpse_step2",
-              "notify": false
-            }
-          },
-          {
-            "text": {
-              "translate": "superior_tutorial.choice.who_are_you"
-            },
-            "goto": "s1_who"
-          },
-          {
-            "text": {
-              "translate": "superior_tutorial.choice.cant_help"
-            },
-            "goto": "s1_no",
-            "outcome": "bad"
-          }
-        ]
-      }
-    ],
-    "s1_no": [
-      {
-        "text": {
-          "translate": "superior_tutorial.decaying_corpse.s1.no.1"
-        }
-      }
-    ],
-    "s2": [
-      {
-        "text": {
-          "translate": "superior_tutorial.decaying_corpse.s2.1"
-        }
-      },
-      {
-        "text": {
-          "translate": "superior_tutorial.decaying_corpse.s2.2"
-        }
-      },
-      {
-        "text": {
-          "translate": "superior_tutorial.decaying_corpse.s2.3"
-        },
-        "choices": [
-          {
-            "text": {
-              "translate": "superior_tutorial.choice.ill_do_it"
-            },
-            "goto": "s3",
-            "outcome": "good",
-            "corpse_satchel": true,
-            "unlock": {
-              "key": "superior_tutorial_decaying_corpse_bargain",
-              "notify": false
-            }
-          },
-          {
-            "text": {
-              "translate": "superior_tutorial.choice.whats_in_it"
-            },
-            "goto": "s2_pay"
-          },
-          {
-            "text": {
-              "translate": "superior_tutorial.choice.someone_else"
-            },
-            "goto": "s2_no",
-            "outcome": "bad"
-          }
-        ]
-      }
-    ],
     "s2_pay": [
       {
         "text": {

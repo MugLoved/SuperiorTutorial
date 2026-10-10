@@ -1,37 +1,202 @@
 {
   "npc": "superior_tutorial:decaying_corpse",
   "chat": true,
-  "priority": 3,
-  "if": { "unlocked": "superior_tutorial_decaying_corpse_bargain", "armed": true },
-  "unless": { "unlocked": "superior_tutorial_decaying_corpse_done" },
+  "priority": 4,
+  "if": {
+    "unlocked": "superior_tutorial_decaying_corpse_bargain",
+    "armed": true
+  },
+  "unless": {
+    "unlocked": "superior_tutorial_decaying_corpse_done"
+  },
   "beats": [
     {
-      "text": { "translate": "superior_tutorial.decaying_corpse.armed.1" },
-      "choices": [
-        { "translate": "superior_tutorial.choice.go_on" },
-        { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "end" }
-      ]
+      "text": {
+        "translate": "superior_tutorial.decaying_corpse.s5.1"
+      }
     },
     {
-      "text": { "translate": "superior_tutorial.decaying_corpse.armed.2" },
+      "text": {
+        "translate": "superior_tutorial.decaying_corpse.s5.2"
+      }
+    },
+    {
+      "text": {
+        "translate": "superior_tutorial.decaying_corpse.s5.3"
+      },
       "choices": [
-        { "text": { "translate": "superior_tutorial.choice.slay" }, "goto": "slay" },
-        { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "left" }
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.grant"
+          },
+          "goto": "slay",
+          "outcome": "good"
+        },
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.another_way"
+          },
+          "goto": "s5_other"
+        },
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.deny"
+          },
+          "goto": "s6",
+          "unlock": {
+            "key": "superior_tutorial_decaying_corpse_refused",
+            "notify": false
+          }
+        },
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.abandon"
+          },
+          "goto": "left",
+          "outcome": "bad"
+        }
       ]
     }
   ],
   "branches": {
+    "s5_other": [
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.s5.other.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.s5.other.2"
+        },
+        "choices": [
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.grant"
+            },
+            "goto": "slay",
+            "outcome": "good"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.another_way"
+            },
+            "goto": "s5_other"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.deny"
+            },
+            "goto": "s6",
+            "unlock": {
+              "key": "superior_tutorial_decaying_corpse_refused",
+              "notify": false
+            }
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.abandon"
+            },
+            "goto": "left",
+            "outcome": "bad"
+          }
+        ]
+      }
+    ],
+    "s6": [
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.s6.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.s6.2"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.s6.3"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.s6.4"
+        },
+        "choices": [
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.grant"
+            },
+            "goto": "slay",
+            "outcome": "good"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.abandon"
+            },
+            "goto": "left",
+            "outcome": "bad"
+          }
+        ]
+      }
+    ],
     "slay": [
       {
-        "text": { "translate": "superior_tutorial.decaying_corpse.slay.1" },
-        "unlock": { "keys": ["superior_tutorial_decaying_corpse_done", "superior_tutorial_decaying_corpse_slain"], "notify": false }
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.slay.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.slay.2"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.slay.3"
+        },
+        "unlock": {
+          "keys": [
+            "superior_tutorial_decaying_corpse_done",
+            "superior_tutorial_decaying_corpse_slain"
+          ],
+          "notify": false
+        }
       }
     ],
     "left": [
-      { "text": { "translate": "superior_tutorial.decaying_corpse.left.1" } },
       {
-        "text": { "translate": "superior_tutorial.decaying_corpse.left.2" },
-        "unlock": { "keys": ["superior_tutorial_decaying_corpse_done", "superior_tutorial_decaying_corpse_left"], "notify": false }
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.left.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.left.2"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.left.3"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.left.4"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.left.5"
+        },
+        "unlock": {
+          "keys": [
+            "superior_tutorial_decaying_corpse_done",
+            "superior_tutorial_decaying_corpse_left"
+          ],
+          "notify": false
+        }
       }
     ]
   }
