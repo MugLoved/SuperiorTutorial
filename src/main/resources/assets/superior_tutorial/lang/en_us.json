@@ -1,28 +1,28 @@
 {
-  "entity.superior_tutorial.larry": "Larry",
-  "item.superior_tutorial.larry_spawn_egg": "Larry Spawn Egg",
+  "entity.superior_tutorial.decaying_corpse": "Decaying Corpse",
+  "item.superior_tutorial.decaying_corpse_spawn_egg": "Decaying Corpse Spawn Egg",
 
   "superior_tutorial.choice.go_on": "Go on.",
   "superior_tutorial.choice.leave": "Leave.",
   "superior_tutorial.choice.deal": "I'll make one.",
   "superior_tutorial.choice.slay": "Slay.",
 
-  "superior_tutorial.larry.meet.1": "...Breathing. Huh. Haven't heard that in a while.",
-  "superior_tutorial.larry.meet.2": "Hands won't close. Can't hold a blade. Can't finish it myself.",
-  "superior_tutorial.larry.meet.3": "Bring me something with an edge. Something for your trouble after.",
-  "superior_tutorial.larry.meet.4": "I've seen those paths walked.",
-  "superior_tutorial.larry.meet.5": "Bench is there. Make one. Come back.",
+  "superior_tutorial.decaying_corpse.meet.1": "...Breathing. Huh. Haven't heard that in a while.",
+  "superior_tutorial.decaying_corpse.meet.2": "Hands won't close. Can't hold a blade. Can't finish it myself.",
+  "superior_tutorial.decaying_corpse.meet.3": "Bring me something with an edge. Something for your trouble after.",
+  "superior_tutorial.decaying_corpse.meet.4": "I've seen those paths walked.",
+  "superior_tutorial.decaying_corpse.meet.5": "Bench is there. Make one. Come back.",
 
-  "superior_tutorial.larry.unarmed.1": "Nothing in your hands. Bench. There.",
+  "superior_tutorial.decaying_corpse.unarmed.1": "Nothing in your hands. Bench. There.",
 
-  "superior_tutorial.larry.armed.1": "That'll do.",
-  "superior_tutorial.larry.armed.2": "Now... your end of it.",
+  "superior_tutorial.decaying_corpse.armed.1": "That'll do.",
+  "superior_tutorial.decaying_corpse.armed.2": "Now... your end of it.",
 
-  "superior_tutorial.larry.slay.1": "...Thank you.",
+  "superior_tutorial.decaying_corpse.slay.1": "...Thank you.",
 
-  "superior_tutorial.larry.left.1": "No. Wait. You said—",
-  "superior_tutorial.larry.left.2": "...Monster.",
+  "superior_tutorial.decaying_corpse.left.1": "No. Wait. You said—",
+  "superior_tutorial.decaying_corpse.left.2": "...Monster.",
 
-  "superior_tutorial.larry.hit": "\"Won't take. Tried.\"",
-  "superior_tutorial.larry.remains": "Not alive. Not dead. Nothing left in it."
+  "superior_tutorial.decaying_corpse.hit": "\"Won't take. Tried.\"",
+  "superior_tutorial.decaying_corpse.remains": "Not alive. Not dead. Nothing left in it."
 }

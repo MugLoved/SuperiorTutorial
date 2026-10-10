@@ -1,6 +1,6 @@
 package com.mugloved.superiortutorial;
 
-import com.mugloved.superiortutorial.entity.Larry;
+import com.mugloved.superiortutorial.entity.DecayingCorpse;
 import com.mugloved.superiortutorial.story.TutorialConditions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -30,15 +30,15 @@ public final class SuperiorTutorial {
     private static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, MOD_ID);
     private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MOD_ID);
 
-    public static final RegistryObject<EntityType<Larry>> LARRY = ENTITIES.register("larry", () ->
-        EntityType.Builder.of(Larry::new, MobCategory.MISC)
+    public static final RegistryObject<EntityType<DecayingCorpse>> DECAYING_CORPSE = ENTITIES.register("decaying_corpse", () ->
+        EntityType.Builder.of(DecayingCorpse::new, MobCategory.MISC)
             .sized(1.3f, 1.45f)          // his sitting model: about 1.4 wide, 1.2 deep, 1.45 tall
             .fireImmune()
             .clientTrackingRange(10)
-            .build(MOD_ID + ":larry"));
+            .build(MOD_ID + ":decaying_corpse"));
 
-    public static final RegistryObject<Item> LARRY_SPAWN_EGG = ITEMS.register("larry_spawn_egg", () ->
-        new ForgeSpawnEggItem(LARRY, 0xC9C3B4, 0x4A4438, new Item.Properties()));
+    public static final RegistryObject<Item> DECAYING_CORPSE_SPAWN_EGG = ITEMS.register("decaying_corpse_spawn_egg", () ->
+        new ForgeSpawnEggItem(DECAYING_CORPSE, 0xC9C3B4, 0x4A4438, new Item.Properties()));
 
     public SuperiorTutorial() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -50,10 +50,10 @@ public final class SuperiorTutorial {
     }
 
     private static void attributes(EntityAttributeCreationEvent event) {
-        event.put(LARRY.get(), Larry.createAttributes().build());
+        event.put(DECAYING_CORPSE.get(), DecayingCorpse.createAttributes().build());
     }
 
     private static void creativeTabs(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) event.accept(LARRY_SPAWN_EGG);
+        if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) event.accept(DECAYING_CORPSE_SPAWN_EGG);
     }
 }

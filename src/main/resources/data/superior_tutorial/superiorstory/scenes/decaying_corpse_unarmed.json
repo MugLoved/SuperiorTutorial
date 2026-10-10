@@ -1,0 +1,15 @@
+{
+  "npc": "superior_tutorial:decaying_corpse",
+  "chat": true,
+  "priority": 2,
+  "if": { "unlocked": "superior_tutorial_decaying_corpse_bargain", "armed": false },
+  "unless": { "unlocked": "superior_tutorial_decaying_corpse_done" },
+  "beats": [
+    {
+      "text": { "translate": "superior_tutorial.decaying_corpse.unarmed.1" },
+      "choices": [
+        { "text": { "translate": "superior_tutorial.choice.leave" }, "goto": "end" }
+      ]
+    }
+  ]
+}

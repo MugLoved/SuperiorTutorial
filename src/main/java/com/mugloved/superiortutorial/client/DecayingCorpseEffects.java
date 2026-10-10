@@ -1,6 +1,6 @@
 package com.mugloved.superiortutorial.client;
 
-import com.mugloved.superiortutorial.entity.Larry;
+import com.mugloved.superiortutorial.entity.DecayingCorpse;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
@@ -24,81 +24,81 @@ import net.minecraft.world.phys.Vec3;
  *                1.2  the decayed skin creeps in (renderer)
  *                1.55 his hand drops: a cold cloud of dust rolls out low over the floor, ash and bone dust burst
  *                1.6+ ash, bone dust and dark flakes keep sifting off him while he rots; the stain soaks in
- *                     (renderer, see LarryStain); all of it thinning out by 5 s
+ *                     (renderer, see DecayingCorpseStain); all of it thinning out by 5 s
  * Rotten         now and then a flake of ash or a dark fleck falls off him
  * </pre>
  */
-final class LarryEffects {
+final class DecayingCorpseEffects {
     private static final ParticleOptions BONE_DUST = new BlockParticleOption(ParticleTypes.FALLING_DUST, Blocks.BONE_BLOCK.defaultBlockState());
     private static final ParticleOptions DIRT_DUST = new BlockParticleOption(ParticleTypes.FALLING_DUST, Blocks.COARSE_DIRT.defaultBlockState());
 
-    private LarryEffects() {}
+    private DecayingCorpseEffects() {}
 
-    static void tick(ClientLevel level, Larry larry) {
-        int phase = LarryView.update(larry, 0.0f);   // (also keeps his phase current while he is off screen)
-        LarryView.tickEngage(larry, net.minecraft.client.Minecraft.getInstance().player);
+    static void tick(ClientLevel level, DecayingCorpse corpse) {
+        int phase = DecayingCorpseView.update(corpse, 0.0f);   // (also keeps his phase current while he is off screen)
+        DecayingCorpseView.tickEngage(corpse, net.minecraft.client.Minecraft.getInstance().player);
         RandomSource random = level.random;
-        if (phase == Larry.PHASE_ROTTEN) {
-            if (random.nextInt(60) == 0) emit(level, chest(larry), ParticleTypes.WHITE_ASH, 1, 0.35, 0.3, -0.01, 0.0);
-            if (random.nextInt(140) == 0) emit(level, chest(larry), ParticleTypes.ASH, 1, 0.3, 0.3, 0.0, 0.0);
+        if (phase == DecayingCorpse.PHASE_ROTTEN) {
+            if (random.nextInt(60) == 0) emit(level, chest(corpse), ParticleTypes.WHITE_ASH, 1, 0.35, 0.3, -0.01, 0.0);
+            if (random.nextInt(140) == 0) emit(level, chest(corpse), ParticleTypes.ASH, 1, 0.3, 0.3, 0.0, 0.0);
             return;
         }
-        if (larry.clientEndingStart < 0) return;
-        double before = larry.clientEffectsDone;
-        double now = LarryView.endingSeconds(larry, 0.0f);
-        larry.clientEffectsDone = now;
+        if (corpse.clientEndingStart < 0) return;
+        double before = corpse.clientEffectsDone;
+        double now = DecayingCorpseView.endingSeconds(corpse, 0.0f);
+        corpse.clientEffectsDone = now;
         if (now <= before) return;
 
-        if (larry.clientEnding == Larry.PHASE_SLAY) {
-            slay(level, larry, random, before, now);
-        } else if (larry.clientEnding == Larry.PHASE_LEAVE) {
-            leave(level, larry, random, before, now);
+        if (corpse.clientEnding == DecayingCorpse.PHASE_SLAY) {
+            slay(level, corpse, random, before, now);
+        } else if (corpse.clientEnding == DecayingCorpse.PHASE_LEAVE) {
+            leave(level, corpse, random, before, now);
         }
     }
 
-    private static void slay(ClientLevel level, Larry larry, RandomSource random, double before, double now) {
-        if (crossed(before, now, 0.05)) ring(level, larry, random);
-        if (crossed(before, now, 1.2)) emit(level, eyes(larry), ParticleTypes.SOUL, 5, 0.08, 0.05, 0.01, 0.015);
+    private static void slay(ClientLevel level, DecayingCorpse corpse, RandomSource random, double before, double now) {
+        if (crossed(before, now, 0.05)) ring(level, corpse, random);
+        if (crossed(before, now, 1.2)) emit(level, eyes(corpse), ParticleTypes.SOUL, 5, 0.08, 0.05, 0.01, 0.015);
         if (crossed(before, now, 2.15)) {
             // The last breath goes out of him.
-            breath(level, larry, random);
-            emit(level, chest(larry), ParticleTypes.SOUL, 10, 0.3, 0.4, 0.02, 0.03);
-            emit(level, chest(larry), ParticleTypes.SMOKE, 10, 0.3, 0.4, 0.015, 0.02);
+            breath(level, corpse, random);
+            emit(level, chest(corpse), ParticleTypes.SOUL, 10, 0.3, 0.4, 0.02, 0.03);
+            emit(level, chest(corpse), ParticleTypes.SMOKE, 10, 0.3, 0.4, 0.015, 0.02);
         }
-        if (now >= LarryView.SLAY_FADE_START && before < LarryView.SLAY_FADE_END) {
+        if (now >= DecayingCorpseView.SLAY_FADE_START && before < DecayingCorpseView.SLAY_FADE_END) {
             // He comes apart as he fades: ash and a little dust fall away, a thin trail of souls rises.
-            float left = 1.0f - LarryView.smooth(now, LarryView.SLAY_FADE_START, LarryView.SLAY_FADE_END);
-            emit(level, chest(larry), ParticleTypes.WHITE_ASH, 2 + Math.round(3 * left), 0.4, 0.55, 0.0, 0.02);
-            if (random.nextFloat() < 0.5f) emit(level, chest(larry), BONE_DUST, 1, 0.35, 0.5, 0.0, 0.0);
-            if (random.nextFloat() < 0.35f * left + 0.1f) emit(level, chest(larry), ParticleTypes.SOUL, 1, 0.15, 0.25, 0.025, 0.03);
+            float left = 1.0f - DecayingCorpseView.smooth(now, DecayingCorpseView.SLAY_FADE_START, DecayingCorpseView.SLAY_FADE_END);
+            emit(level, chest(corpse), ParticleTypes.WHITE_ASH, 2 + Math.round(3 * left), 0.4, 0.55, 0.0, 0.02);
+            if (random.nextFloat() < 0.5f) emit(level, chest(corpse), BONE_DUST, 1, 0.35, 0.5, 0.0, 0.0);
+            if (random.nextFloat() < 0.35f * left + 0.1f) emit(level, chest(corpse), ParticleTypes.SOUL, 1, 0.15, 0.25, 0.025, 0.03);
         }
-        if (crossed(before, now, LarryView.SLAY_FADE_END)) {
-            emit(level, floor(larry, 0.0, 0.15), BONE_DUST, 14, 0.45, 0.15, 0.0, 0.0);
-            emit(level, floor(larry, 0.0, 0.1), ParticleTypes.WHITE_ASH, 18, 0.5, 0.1, 0.0, 0.01);
+        if (crossed(before, now, DecayingCorpseView.SLAY_FADE_END)) {
+            emit(level, floor(corpse, 0.0, 0.15), BONE_DUST, 14, 0.45, 0.15, 0.0, 0.0);
+            emit(level, floor(corpse, 0.0, 0.1), ParticleTypes.WHITE_ASH, 18, 0.5, 0.1, 0.0, 0.01);
         }
     }
 
-    private static void leave(ClientLevel level, Larry larry, RandomSource random, double before, double now) {
+    private static void leave(ClientLevel level, DecayingCorpse corpse, RandomSource random, double before, double now) {
         if (crossed(before, now, 1.55)) {
             // His hand hits the floor: a cold cloud of dust rolls out low and slow, and he sheds a burst of ash.
-            dustCloud(level, larry, random);
-            emit(level, chest(larry), ParticleTypes.WHITE_ASH, 40, 0.4, 0.55, 0.01, 0.03);
-            emit(level, chest(larry), BONE_DUST, 14, 0.35, 0.5, 0.0, 0.0);
-            emit(level, chest(larry), ParticleTypes.ASH, 20, 0.4, 0.5, 0.0, 0.0);
+            dustCloud(level, corpse, random);
+            emit(level, chest(corpse), ParticleTypes.WHITE_ASH, 40, 0.4, 0.55, 0.01, 0.03);
+            emit(level, chest(corpse), BONE_DUST, 14, 0.35, 0.5, 0.0, 0.0);
+            emit(level, chest(corpse), ParticleTypes.ASH, 20, 0.4, 0.5, 0.0, 0.0);
         }
         if (now > 1.6 && before < 5.0) {
             // Sifting off him while he rots, thinning out as the decay finishes.
-            float left = 1.0f - LarryView.smooth(now, 1.6, 5.0);
-            if (random.nextFloat() < 1.2f * left) emit(level, chest(larry), ParticleTypes.WHITE_ASH, 1, 0.4, 0.55, -0.005, 0.0);
-            if (random.nextFloat() < 0.4f * left) emit(level, chest(larry), BONE_DUST, 1, 0.35, 0.5, 0.0, 0.0);
-            if (random.nextFloat() < 0.6f * left) emit(level, chest(larry), ParticleTypes.ASH, 1, 0.4, 0.5, 0.0, 0.0);
-            if (random.nextFloat() < 0.25f * left) emit(level, floor(larry, 0.1, 0.05), DIRT_DUST, 1, 0.6, 0.05, 0.0, 0.0);
+            float left = 1.0f - DecayingCorpseView.smooth(now, 1.6, 5.0);
+            if (random.nextFloat() < 1.2f * left) emit(level, chest(corpse), ParticleTypes.WHITE_ASH, 1, 0.4, 0.55, -0.005, 0.0);
+            if (random.nextFloat() < 0.4f * left) emit(level, chest(corpse), BONE_DUST, 1, 0.35, 0.5, 0.0, 0.0);
+            if (random.nextFloat() < 0.6f * left) emit(level, chest(corpse), ParticleTypes.ASH, 1, 0.4, 0.5, 0.0, 0.0);
+            if (random.nextFloat() < 0.25f * left) emit(level, floor(corpse, 0.1, 0.05), DIRT_DUST, 1, 0.6, 0.05, 0.0, 0.0);
         }
     }
 
     /** A low ring of pale light on the floor around him, drifting very slightly outward and up. */
-    private static void ring(ClientLevel level, Larry larry, RandomSource random) {
-        Vec3 middle = floor(larry, 0.0, 0.12);
+    private static void ring(ClientLevel level, DecayingCorpse corpse, RandomSource random) {
+        Vec3 middle = floor(corpse, 0.0, 0.12);
         int count = 22;
         for (int i = 0; i < count; i++) {
             double angle = (i + random.nextDouble() * 0.5) / count * Math.PI * 2.0;
@@ -112,9 +112,9 @@ final class LarryEffects {
     }
 
     /** His last breath: ash and smoke pushed gently out of his mouth, in the direction he faces. */
-    private static void breath(ClientLevel level, Larry larry, RandomSource random) {
-        Vec3 mouth = eyes(larry).add(0.0, -0.12, 0.0);
-        Vec3 ahead = forward(larry);
+    private static void breath(ClientLevel level, DecayingCorpse corpse, RandomSource random) {
+        Vec3 mouth = eyes(corpse).add(0.0, -0.12, 0.0);
+        Vec3 ahead = forward(corpse);
         for (int i = 0; i < 14; i++) {
             double speed = 0.02 + random.nextDouble() * 0.03;
             ParticleOptions type = i % 2 == 0 ? ParticleTypes.SMOKE : ParticleTypes.WHITE_ASH;
@@ -125,8 +125,8 @@ final class LarryEffects {
     }
 
     /** A cloud of dust rolling out low across the floor, every way at once, slowly. */
-    private static void dustCloud(ClientLevel level, Larry larry, RandomSource random) {
-        Vec3 middle = floor(larry, 0.15, 0.15);
+    private static void dustCloud(ClientLevel level, DecayingCorpse corpse, RandomSource random) {
+        Vec3 middle = floor(corpse, 0.15, 0.15);
         for (int i = 0; i < 26; i++) {
             double angle = random.nextDouble() * Math.PI * 2.0;
             double speed = 0.03 + random.nextDouble() * 0.04;
@@ -156,30 +156,30 @@ final class LarryEffects {
     }
 
     /** The middle of his body, which sits a little behind his block's centre (his back is to the wall). */
-    private static Vec3 chest(Larry larry) {
-        return at(larry, -0.12, 0.55);
+    private static Vec3 chest(DecayingCorpse corpse) {
+        return at(corpse, -0.12, 0.55);
     }
 
     /** About where his eyes are: high on his slumped head, at its front. */
-    private static Vec3 eyes(Larry larry) {
-        return at(larry, 0.22, 1.08);
+    private static Vec3 eyes(DecayingCorpse corpse) {
+        return at(corpse, 0.22, 1.08);
     }
 
     /** On the floor under him, {@code forward} blocks ahead of his seat, {@code up} blocks above the floor. */
-    private static Vec3 floor(Larry larry, double forward, double up) {
-        return at(larry, forward, up - LarryRenderer.LIFT);
+    private static Vec3 floor(DecayingCorpse corpse, double forward, double up) {
+        return at(corpse, forward, up - DecayingCorpseRenderer.LIFT);
     }
 
     /** The direction his body faces, flat. */
-    private static Vec3 forward(Larry larry) {
-        float facing = larry.yBodyRot * Mth.DEG_TO_RAD;
+    private static Vec3 forward(DecayingCorpse corpse) {
+        float facing = corpse.yBodyRot * Mth.DEG_TO_RAD;
         return new Vec3(-Mth.sin(facing), 0.0, Mth.cos(facing));
     }
 
     /** A point {@code forward} blocks in front of him (negative: behind) and {@code up} blocks above his feet. */
-    private static Vec3 at(Larry larry, double forward, double up) {
-        float facing = larry.yBodyRot * Mth.DEG_TO_RAD;
-        double ahead = forward + LarryRenderer.FORWARD;
-        return new Vec3(larry.getX() - Mth.sin(facing) * ahead, larry.getY() + LarryRenderer.LIFT + up, larry.getZ() + Mth.cos(facing) * ahead);
+    private static Vec3 at(DecayingCorpse corpse, double forward, double up) {
+        float facing = corpse.yBodyRot * Mth.DEG_TO_RAD;
+        double ahead = forward + DecayingCorpseRenderer.FORWARD;
+        return new Vec3(corpse.getX() - Mth.sin(facing) * ahead, corpse.getY() + DecayingCorpseRenderer.LIFT + up, corpse.getZ() + Mth.cos(facing) * ahead);
     }
 }
