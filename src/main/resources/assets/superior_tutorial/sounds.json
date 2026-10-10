@@ -1,0 +1,325 @@
+{
+  "corpse.voice": {
+    "sounds": [
+      "superior_tutorial:corpse/voice_1",
+      "superior_tutorial:corpse/voice_2",
+      "superior_tutorial:corpse/voice_3",
+      "superior_tutorial:corpse/voice_4",
+      "superior_tutorial:corpse/voice_5",
+      "superior_tutorial:corpse/voice_6"
+    ]
+  },
+  "corpse.slay.breath": {
+    "sounds": [
+      {
+        "name": "minecraft:random/breath",
+        "pitch": 0.6,
+        "volume": 0.7
+      }
+    ]
+  },
+  "corpse.slay.bones": {
+    "sounds": [
+      {
+        "name": "minecraft:block/bone_block/step1",
+        "pitch": 0.7,
+        "volume": 0.8
+      },
+      {
+        "name": "minecraft:block/bone_block/step2",
+        "pitch": 0.7,
+        "volume": 0.8
+      },
+      {
+        "name": "minecraft:block/bone_block/step3",
+        "pitch": 0.7,
+        "volume": 0.8
+      },
+      {
+        "name": "minecraft:block/bone_block/step4",
+        "pitch": 0.7,
+        "volume": 0.8
+      },
+      {
+        "name": "minecraft:block/bone_block/step5",
+        "pitch": 0.7,
+        "volume": 0.8
+      }
+    ]
+  },
+  "corpse.slay.cloth": {
+    "sounds": [
+      {
+        "name": "minecraft:step/cloth1",
+        "pitch": 0.6,
+        "volume": 0.7
+      },
+      {
+        "name": "minecraft:step/cloth2",
+        "pitch": 0.6,
+        "volume": 0.7
+      },
+      {
+        "name": "minecraft:step/cloth3",
+        "pitch": 0.6,
+        "volume": 0.7
+      },
+      {
+        "name": "minecraft:step/cloth4",
+        "pitch": 0.6,
+        "volume": 0.7
+      }
+    ]
+  },
+  "corpse.slay.slump": {
+    "sounds": [
+      {
+        "name": "minecraft:block/sculk/step1",
+        "pitch": 0.6,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/sculk/step2",
+        "pitch": 0.6,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/sculk/step3",
+        "pitch": 0.6,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/sculk/step4",
+        "pitch": 0.6,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/sculk/step5",
+        "pitch": 0.6,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/sculk/step6",
+        "pitch": 0.6,
+        "volume": 0.6
+      }
+    ]
+  },
+  "corpse.slay.release": {
+    "sounds": [
+      {
+        "name": "minecraft:block/amethyst/shimmer",
+        "pitch": 0.5,
+        "volume": 0.35
+      }
+    ]
+  },
+  "corpse.slay.dust": {
+    "sounds": [
+      {
+        "name": "minecraft:step/cloth1",
+        "pitch": 0.5,
+        "volume": 0.4
+      },
+      {
+        "name": "minecraft:step/cloth2",
+        "pitch": 0.5,
+        "volume": 0.4
+      },
+      {
+        "name": "minecraft:step/cloth3",
+        "pitch": 0.5,
+        "volume": 0.4
+      },
+      {
+        "name": "minecraft:step/cloth4",
+        "pitch": 0.5,
+        "volume": 0.4
+      }
+    ]
+  },
+  "corpse.decay.wet": {
+    "sounds": [
+      {
+        "name": "minecraft:block/mud/step1",
+        "pitch": 0.7,
+        "volume": 0.7
+      },
+      {
+        "name": "minecraft:block/mud/step2",
+        "pitch": 0.7,
+        "volume": 0.7
+      },
+      {
+        "name": "minecraft:block/mud/step3",
+        "pitch": 0.7,
+        "volume": 0.7
+      },
+      {
+        "name": "minecraft:block/mud/step4",
+        "pitch": 0.7,
+        "volume": 0.7
+      },
+      {
+        "name": "minecraft:block/mud/step5",
+        "pitch": 0.7,
+        "volume": 0.7
+      },
+      {
+        "name": "minecraft:block/mud/step6",
+        "pitch": 0.7,
+        "volume": 0.7
+      }
+    ]
+  },
+  "corpse.decay.bones": {
+    "sounds": [
+      {
+        "name": "minecraft:block/bone_block/step1",
+        "pitch": 0.6,
+        "volume": 0.7
+      },
+      {
+        "name": "minecraft:block/bone_block/step2",
+        "pitch": 0.6,
+        "volume": 0.7
+      },
+      {
+        "name": "minecraft:block/bone_block/step3",
+        "pitch": 0.6,
+        "volume": 0.7
+      },
+      {
+        "name": "minecraft:block/bone_block/step4",
+        "pitch": 0.6,
+        "volume": 0.7
+      },
+      {
+        "name": "minecraft:block/bone_block/step5",
+        "pitch": 0.6,
+        "volume": 0.7
+      }
+    ]
+  },
+  "corpse.decay.grit": {
+    "sounds": [
+      {
+        "name": "minecraft:step/gravel1",
+        "pitch": 0.5,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:step/gravel2",
+        "pitch": 0.5,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:step/gravel3",
+        "pitch": 0.5,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:step/gravel4",
+        "pitch": 0.5,
+        "volume": 0.6
+      }
+    ]
+  },
+  "corpse.decay.roots": {
+    "sounds": [
+      {
+        "name": "minecraft:block/roots/break1",
+        "pitch": 0.6,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/roots/break2",
+        "pitch": 0.6,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/roots/break3",
+        "pitch": 0.6,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/roots/break4",
+        "pitch": 0.6,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/roots/break5",
+        "pitch": 0.6,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/roots/break6",
+        "pitch": 0.6,
+        "volume": 0.6
+      }
+    ]
+  },
+  "corpse.decay.moss": {
+    "sounds": [
+      {
+        "name": "minecraft:block/moss/break1",
+        "pitch": 0.6,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/moss/break2",
+        "pitch": 0.6,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/moss/break3",
+        "pitch": 0.6,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/moss/break4",
+        "pitch": 0.6,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/moss/break5",
+        "pitch": 0.6,
+        "volume": 0.6
+      }
+    ]
+  },
+  "corpse.decay.settle": {
+    "sounds": [
+      {
+        "name": "minecraft:block/mud/break1",
+        "pitch": 0.5,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/mud/break2",
+        "pitch": 0.5,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/mud/break3",
+        "pitch": 0.5,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/mud/break4",
+        "pitch": 0.5,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/mud/break5",
+        "pitch": 0.5,
+        "volume": 0.6
+      },
+      {
+        "name": "minecraft:block/mud/break6",
+        "pitch": 0.5,
+        "volume": 0.6
+      }
+    ]
+  }
+}

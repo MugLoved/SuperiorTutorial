@@ -1,0 +1,113 @@
+{
+  "npc": "superior_tutorial:decaying_corpse",
+  "chat": true,
+  "priority": 5,
+  "if": {
+    "unlocked": [
+      "superior_tutorial_decaying_corpse_bargain",
+      "superior_tutorial_decaying_corpse_refused"
+    ],
+    "armed": true
+  },
+  "unless": {
+    "unlocked": "superior_tutorial_decaying_corpse_done"
+  },
+  "beats": [
+    {
+      "text": {
+        "translate": "superior_tutorial.decaying_corpse.s6.1"
+      }
+    },
+    {
+      "text": {
+        "translate": "superior_tutorial.decaying_corpse.s6.2"
+      }
+    },
+    {
+      "text": {
+        "translate": "superior_tutorial.decaying_corpse.s6.3"
+      }
+    },
+    {
+      "text": {
+        "translate": "superior_tutorial.decaying_corpse.s6.4"
+      },
+      "choices": [
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.grant"
+          },
+          "goto": "slay",
+          "outcome": "good"
+        },
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.abandon"
+          },
+          "goto": "left",
+          "outcome": "bad"
+        }
+      ]
+    }
+  ],
+  "branches": {
+    "slay": [
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.slay.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.slay.2"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.slay.3"
+        },
+        "unlock": {
+          "keys": [
+            "superior_tutorial_decaying_corpse_done",
+            "superior_tutorial_decaying_corpse_slain"
+          ],
+          "notify": false
+        }
+      }
+    ],
+    "left": [
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.left.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.left.2"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.left.3"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.left.4"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.left.5"
+        },
+        "unlock": {
+          "keys": [
+            "superior_tutorial_decaying_corpse_done",
+            "superior_tutorial_decaying_corpse_left"
+          ],
+          "notify": false
+        }
+      }
+    ]
+  }
+}

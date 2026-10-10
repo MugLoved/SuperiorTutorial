@@ -12,7 +12,7 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * The particles of his two endings, and of what is left afterwards. Still quiet: nothing flashes, nothing
- * rises into the sky. Things just stop, or rot. (Sounds come later, through Superior Sounds.)
+ * rises into the sky. Things just stop, or rot. (Their sounds are cued from here too, see CorpseAudio.)
  *
  * <pre>
  * Slay  (4.4 s)  0.0  his eyes light up (renderer); a low ring of pale light settles on the floor around him
@@ -48,6 +48,7 @@ final class DecayingCorpseEffects {
         double now = DecayingCorpseView.endingSeconds(corpse, 0.0f);
         corpse.clientEffectsDone = now;
         if (now <= before) return;
+        CorpseAudio.endingCues(corpse, before, now);
 
         if (corpse.clientEnding == DecayingCorpse.PHASE_SLAY) {
             slay(level, corpse, random, before, now);

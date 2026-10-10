@@ -11,11 +11,11 @@ The player starts in a small, old cave that was never cleared. The Decaying Corp
 | 2 | The Corpse, his bargain, both endings | done (placeholder lines) |
 | 2b | The Corpse's real model, his five animations on their triggers, the effects of both endings | done |
 | 0.1.6 prep | Larry renamed to the Decaying Corpse; the intro now ends on `reveal` (pack override in `kubejs/data/superiorstory/superiorstory/scenes/intro.json`) | done |
-| Sounds | One voice sound per line, death and decay sounds | next |
-| Dialogue | Mug's six-step script | |
-| Satchel | Corpse's Satchel: 2 oak planks, 1 cobblestone, 2 andesite alloy, the same for everyone; any weapon counts | |
-| Endings | Slay and Abandon on the new script; ending keys for Aho's FTB quests | |
-| Later | The merchant in the cove; spawning inside the cave | |
+| Sounds | His own 45 ms voice blips in place of Story's typing blip while you talk to him; death and decay sounds (through Superior Sounds) | done |
+| Dialogue | Mug's six-step script, resuming at the step the player reached | done |
+| Satchel | Corpse's Satchel: 2 oak planks, 1 cobblestone, 2 andesite alloy, the same for everyone; any weapon counts | done |
+| Endings | Slay and Abandon on the new script; ending keys for Aho's FTB quests | done |
+| Later | The merchant in the cove; spawning inside the cave; light-blue / red choice hover (needs a SuperiorStory change: its choices carry no colour) | |
 
 The class menu (categories, class pages, hold-to-choose, per-class kits, the Moldy Notes spell book) was dropped from the tutorial on 2026-10-10. Class choice happens afterwards in Aho's skill tree. The shelved design is kept in Mug's doc "Superior Class Path Archive".
 
@@ -53,26 +53,48 @@ Quiet on purpose (no ceremony): nothing flashes or rises into the sky.
 
 ## Per-player state
 
-Each player has their own Corpse. The state is stored as Superior Lib unlock keys (saved with the world, synced to that player's client, readable in dialogue with Story's `unlocked` condition):
+Each player has their own Corpse. The state is stored as Superior Lib unlock keys (saved with the world, synced to that player's client, readable in dialogue with Story's `unlocked` condition, and readable by other mods such as Aho's FTB quests):
 
 | Key | Meaning |
 | --- | --- |
-| `superior_tutorial_decaying_corpse_bargain` | The player agreed to make a weapon. |
-| `superior_tutorial_decaying_corpse_done` | Either ending happened. All of the Corpse's dialogue is hidden after this. |
+| `superior_tutorial_decaying_corpse_step2` | The player heard him out (step 1). Coming back, they start at step 2. |
+| `superior_tutorial_decaying_corpse_bargain` | The player agreed (step 2) and got the Corpse's Satchel, exactly once. |
+| `superior_tutorial_decaying_corpse_refused` | The player denied his request once (step 5). Coming back armed, they start at step 6. |
+| `superior_tutorial_decaying_corpse_done` | Either ending happened. All of the Corpse's dialogue is hidden after this. **This is the key for "the tutorial is finished".** |
 | `superior_tutorial_decaying_corpse_slain` | The player ended him. He is no longer drawn or targetable for that player (a soul-smoke burst marks the moment). |
-| `superior_tutorial_decaying_corpse_left` | The player left him. He is drawn decayed, head hanging, for that player (an ash burst marks the moment). Right-clicking him shows one line on the action bar. |
+| `superior_tutorial_decaying_corpse_left` | The player left him to his fate. He is drawn decayed, head hanging, for that player. Right-clicking him shows "..." on the action bar. |
 
 Everyone else still sees their own Corpse. To reset a player for testing: `/superior_lib lock <player> <key>` for each key.
 
 ## Dialogue
 
-Files in `src/main/resources/data/superior_tutorial/superiorstory/scenes/`, all bound with `"npc": "superior_tutorial:decaying_corpse"` and marked `"chat": true`. Story only lets a mob talk when its dialogue offers something (a quest, a hand-over) or is marked as chat, so every Corpse dialogue needs the mark:
+Mug's six-step script. Files in `src/main/resources/data/superior_tutorial/superiorstory/scenes/`, all bound with `"npc": "superior_tutorial:decaying_corpse"` and marked `"chat": true` (Story only lets a mob talk when its dialogue offers something or is marked as chat). The highest-priority file whose conditions hold is the one that plays, which is how a returning player resumes at their step:
 
-- `decaying_corpse_meet.json` (priority 1): the first meeting. Every screen has Leave. The last choice strikes the bargain.
-- `decaying_corpse_unarmed.json` (priority 2): after the bargain, with no weapon in hand: he points to the bench.
-- `decaying_corpse_armed.json` (priority 3): after the bargain, holding a weapon: "Now... your end of it." Slay or Leave. Each ending's key is set on its last line, so closing the box early (Esc) does not seal it.
+| File | Priority | When | Starts at |
+| --- | --- | --- | --- |
+| `decaying_corpse_meet.json` | 1 | always (until done) | step 1 |
+| `decaying_corpse_step2.json` | 2 | `step2` | step 2 |
+| `decaying_corpse_unarmed.json` | 3 | `bargain`, no weapon in hand | step 4 |
+| `decaying_corpse_armed.json` | 4 | `bargain`, any weapon in hand | step 5 |
+| `decaying_corpse_refused.json` | 5 | `bargain` and `refused`, any weapon in hand | step 6 |
 
-All text lives in `src/main/resources/assets/superior_tutorial/lang/en_us.json`. The current lines are placeholders. They can be rewritten there without touching the dialogue files, or overridden from a resource pack without a rebuild.
+- Step 1, "What about it?" sets `step2`. Step 2, "I'll do it." hands over the satchel (`"corpse_satchel": true`) and sets `bargain` in the same click, so the satchel can only be given once.
+- Step 5, "Deny the request." sets `refused`.
+- Each ending's keys are set on its last line, so closing the box early (Esc) does not seal it.
+- Every choice that moves the quest on is marked `"outcome": "good"`, every one that leaves is `"outcome": "bad"`. Story does not colour choices yet; the marks are there for when it does.
+
+All text lives in `src/main/resources/assets/superior_tutorial/lang/en_us.json` (keys `superior_tutorial.decaying_corpse.*` and `superior_tutorial.choice.*`). It can be rewritten there without touching the dialogue files, or overridden from a resource pack without a rebuild.
+
+### The Corpse's Satchel
+
+`"corpse_satchel": true` is an action this mod adds to Story. It gives a Sophisticated Backpack named "Corpse's Satchel" that fills itself, the first time it is opened, from the loot table `superior_tutorial:satchel/corpse` (`data/superior_tutorial/loot_tables/satchel/corpse.json`): 2 oak planks, 1 cobblestone, 2 andesite alloy. Change the loot table to change the contents. Without Sophisticated Backpacks the player gets the items loose.
+
+### Sounds
+
+All of them play through Superior Sounds (catalog `assets/superior_tutorial/superior_sounds/audio/corpse.json`); this mod plays nothing itself.
+
+- **Voice:** while the local player has the dialogue box open with a Corpse, the signal `superior_tutorial:corpse_speaking` is true, and a rule with priority 100 answers Story's typing event (`superiorstory:type`) with `superior_tutorial:corpse.voice` instead of Story's blip. The six voice blips (`sounds/corpse/voice_1-6.ogg`) are cut from Mug's recordings to 45 ms, the length of the intro's typing blips, so they never pile up.
+- **Endings:** cue events `superior_tutorial:corpse_slay_*` and `corpse_decay_*` fire at set moments of each ending, at his body. They play vanilla sounds lowered in pitch (`assets/superior_tutorial/sounds.json`): slay is a last breath, bones, cloth, a slump, a low ring as he fades, dust; leave is wet rot, bone and grit as his hand drops, roots, moss, and settling mud.
 
 ### `armed` condition
 
@@ -80,17 +102,17 @@ Added to Story's registry by this mod. `"armed": true` is true when the player h
 
 ## Testing
 
-1. Put the jar in the pack's `mods` folder next to `superior_story.jar`, `superior_lib.jar` and GeckoLib.
+1. Put the jar in the pack's `mods` folder next to `superior_story.jar`, `superior_lib.jar`, `superior_sounds.jar`, Sophisticated Backpacks and GeckoLib.
 2. In a creative world, place the Corpse with the spawn egg, then switch to survival.
 3. Press the Talk key (R) while looking at him.
-4. To repeat a test: `/superior_lib lock @s superior_tutorial_decaying_corpse_bargain`, then the same for `_done`, `_slain` and `_left`. The Corpse goes straight back to waiting.
+4. To repeat a test: `/superior_lib lock @s superior_tutorial_decaying_corpse_step2`, then the same for `_bargain`, `_refused`, `_done`, `_slain` and `_left`. The Corpse goes straight back to waiting.
 
 What to look for:
 - Idle: he sits on the floor, back to the wall, breathing barely visibly; his eyes glow faintly at each breath; his head follows you within 8 blocks.
 - Every 36 to 60 seconds, at the end of a breath, he twitches and a little dust falls.
 - Hit him in survival: nothing moves; only the "Won't take. Tried." line shows.
 - Slay: eyes light, go out, he fades with ash and soul smoke, and is gone (no hitbox) for you.
-- Leave: his arm reaches, his hand drops with an ash burst, he rots over a few seconds, and stays rotten and still. Right-clicking him shows the remains line.
+- Leave: his arm reaches, his hand drops with an ash burst, he rots over a few seconds, and stays rotten and still. Right-clicking him shows "...".
 - A second player who hasn't finished with him still sees him waiting.
 
 ## Building

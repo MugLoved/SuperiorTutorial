@@ -42,6 +42,7 @@ public final class TutorialClient {
             if (event.phase != TickEvent.Phase.END) return;
             Minecraft minecraft = Minecraft.getInstance();
             ClientLevel level = minecraft.level;
+            CorpseAudio.ensureRegistered();
             if (level == null || minecraft.player == null) {
                 lastLevel = null;
                 lastState = -1;

@@ -43,6 +43,8 @@ dependencies {
     implementation fg.deobf(files(localJar("superior_story")))
     implementation fg.deobf(files(localJar("superior_lib")))
     implementation fg.deobf(files(localJar("geckolib")))
+    // The Corpse's voice and ending sounds go through Superior Sounds (optional at runtime).
+    compileOnly fg.deobf(files(localJar("superior_sounds")))
 }
 
 jar {

@@ -1,0 +1,228 @@
+{
+  "npc": "superior_tutorial:decaying_corpse",
+  "chat": true,
+  "priority": 2,
+  "if": {
+    "unlocked": "superior_tutorial_decaying_corpse_step2"
+  },
+  "unless": {
+    "unlocked": "superior_tutorial_decaying_corpse_done"
+  },
+  "beats": [
+    {
+      "text": {
+        "translate": "superior_tutorial.decaying_corpse.s2.1"
+      }
+    },
+    {
+      "text": {
+        "translate": "superior_tutorial.decaying_corpse.s2.2"
+      }
+    },
+    {
+      "text": {
+        "translate": "superior_tutorial.decaying_corpse.s2.3"
+      },
+      "choices": [
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.ill_do_it"
+          },
+          "goto": "s3",
+          "outcome": "good",
+          "corpse_satchel": true,
+          "unlock": {
+            "key": "superior_tutorial_decaying_corpse_bargain",
+            "notify": false
+          }
+        },
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.whats_in_it"
+          },
+          "goto": "s2_pay"
+        },
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.someone_else"
+          },
+          "goto": "s2_no",
+          "outcome": "bad"
+        }
+      ]
+    }
+  ],
+  "branches": {
+    "s2_pay": [
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.s2.pay.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.s2.pay.2"
+        },
+        "choices": [
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.ill_do_it"
+            },
+            "goto": "s3",
+            "outcome": "good",
+            "corpse_satchel": true,
+            "unlock": {
+              "key": "superior_tutorial_decaying_corpse_bargain",
+              "notify": false
+            }
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.whats_in_it"
+            },
+            "goto": "s2_pay"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.someone_else"
+            },
+            "goto": "s2_no",
+            "outcome": "bad"
+          }
+        ]
+      }
+    ],
+    "s2_no": [
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.s2.no.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.s2.no.2"
+        }
+      }
+    ],
+    "s3": [
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.s3.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.s3.2"
+        },
+        "choices": [
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.bring_weapon"
+            },
+            "goto": "end",
+            "outcome": "good"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.how_forge"
+            },
+            "goto": "s3_how"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.where_forge"
+            },
+            "goto": "s3_where"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.no_time"
+            },
+            "goto": "end",
+            "outcome": "bad"
+          }
+        ]
+      }
+    ],
+    "s3_how": [
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.how.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.how.2"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.how.3"
+        },
+        "choices": [
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.bring_weapon"
+            },
+            "goto": "end",
+            "outcome": "good"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.how_forge"
+            },
+            "goto": "s3_how"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.where_forge"
+            },
+            "goto": "s3_where"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.no_time"
+            },
+            "goto": "end",
+            "outcome": "bad"
+          }
+        ]
+      }
+    ],
+    "s3_where": [
+      {
+        "text": {
+          "translate": "superior_tutorial.decaying_corpse.where.1"
+        },
+        "choices": [
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.bring_weapon"
+            },
+            "goto": "end",
+            "outcome": "good"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.how_forge"
+            },
+            "goto": "s3_how"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.where_forge"
+            },
+            "goto": "s3_where"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.no_time"
+            },
+            "goto": "end",
+            "outcome": "bad"
+          }
+        ]
+      }
+    ]
+  }
+}

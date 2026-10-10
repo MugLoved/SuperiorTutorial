@@ -1,0 +1,61 @@
+{
+  "schema_version": 3,
+  "rules": {
+    "corpse_voice": {
+      "sound": "corpse.voice",
+      "event": "superiorstory:type",
+      "priority": 100,
+      "when": {
+        "superior_tutorial:corpse_speaking": true
+      }
+    },
+    "corpse_slay_breath": {
+      "sound": "corpse.slay.breath",
+      "event": "superior_tutorial:corpse_slay_breath"
+    },
+    "corpse_slay_bones": {
+      "sound": "corpse.slay.bones",
+      "event": "superior_tutorial:corpse_slay_bones"
+    },
+    "corpse_slay_cloth": {
+      "sound": "corpse.slay.cloth",
+      "event": "superior_tutorial:corpse_slay_cloth"
+    },
+    "corpse_slay_slump": {
+      "sound": "corpse.slay.slump",
+      "event": "superior_tutorial:corpse_slay_slump"
+    },
+    "corpse_slay_release": {
+      "sound": "corpse.slay.release",
+      "event": "superior_tutorial:corpse_slay_release"
+    },
+    "corpse_slay_dust": {
+      "sound": "corpse.slay.dust",
+      "event": "superior_tutorial:corpse_slay_dust"
+    },
+    "corpse_decay_wet": {
+      "sound": "corpse.decay.wet",
+      "event": "superior_tutorial:corpse_decay_wet"
+    },
+    "corpse_decay_bones": {
+      "sound": "corpse.decay.bones",
+      "event": "superior_tutorial:corpse_decay_bones"
+    },
+    "corpse_decay_grit": {
+      "sound": "corpse.decay.grit",
+      "event": "superior_tutorial:corpse_decay_grit"
+    },
+    "corpse_decay_roots": {
+      "sound": "corpse.decay.roots",
+      "event": "superior_tutorial:corpse_decay_roots"
+    },
+    "corpse_decay_moss": {
+      "sound": "corpse.decay.moss",
+      "event": "superior_tutorial:corpse_decay_moss"
+    },
+    "corpse_decay_settle": {
+      "sound": "corpse.decay.settle",
+      "event": "superior_tutorial:corpse_decay_settle"
+    }
+  }
+}

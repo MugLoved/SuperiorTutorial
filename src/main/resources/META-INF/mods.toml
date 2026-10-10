@@ -45,3 +45,17 @@ The optional first cave of Superior: the Decaying Corpse, his bargain, and the w
     versionRange="[0,)"
     ordering="AFTER"
     side="BOTH"
+
+[[dependencies.superior_tutorial]]
+    modId="superior_sounds"
+    mandatory=false
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.superior_tutorial]]
+    modId="sophisticatedbackpacks"
+    mandatory=false
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="BOTH"
