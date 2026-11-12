@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "superior_tutorial:block/sunken_crate_top",
+    "bottom": "superior_tutorial:block/sunken_crate_side",
+    "side": "superior_tutorial:block/sunken_crate_side",
+    "particle": "superior_tutorial:block/sunken_crate_side"
+  }
+}

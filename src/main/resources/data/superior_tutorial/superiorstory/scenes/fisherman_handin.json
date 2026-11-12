@@ -1,0 +1,61 @@
+{
+  "npc": "superior_tutorial:fisherman",
+  "chat": true,
+  "priority": 7,
+  "if": {
+    "unlocked": "superior_tutorial_fisherman_deal",
+    "has_haskel_crate": true
+  },
+  "unless": {
+    "unlocked": "superior_tutorial_fisherman_done"
+  },
+  "beats": [
+    {
+      "text": {
+        "translate": "superior_tutorial.fisherman.handin.1"
+      },
+      "choices": [
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.fisherman.here_you_go"
+          },
+          "goto": "paid",
+          "outcome": "good",
+          "haskel_reward": true,
+          "unlock": {
+            "keys": [
+              "superior_tutorial_fisherman_met",
+              "superior_tutorial_fisherman_deal",
+              "superior_tutorial_fisherman_done"
+            ],
+            "notify": false
+          }
+        }
+      ]
+    }
+  ],
+  "branches": {
+    "paid": [
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.paid.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.paid.2"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.paid.3"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.paid.4"
+        }
+      }
+    ]
+  }
+}

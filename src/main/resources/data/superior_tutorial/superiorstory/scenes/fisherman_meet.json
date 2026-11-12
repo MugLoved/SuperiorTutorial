@@ -1,0 +1,379 @@
+{
+  "npc": "superior_tutorial:fisherman",
+  "chat": true,
+  "priority": 1,
+  "unless": {
+    "any": [
+      {
+        "unlocked": "superior_tutorial_fisherman_met"
+      },
+      {
+        "unlocked": "superior_tutorial_fisherman_done"
+      }
+    ]
+  },
+  "beats": [
+    {
+      "text": {
+        "translate": "superior_tutorial.fisherman.meet.1"
+      }
+    },
+    {
+      "text": {
+        "translate": "superior_tutorial.fisherman.meet.2"
+      }
+    },
+    {
+      "text": {
+        "translate": "superior_tutorial.fisherman.meet.3"
+      }
+    },
+    {
+      "text": {
+        "translate": "superior_tutorial.fisherman.meet.4"
+      },
+      "choices": [
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.fisherman.who"
+          },
+          "goto": "who",
+          "unlock": {
+            "key": "superior_tutorial_fisherman_met",
+            "notify": false
+          }
+        },
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.fisherman.way_out"
+          },
+          "goto": "out",
+          "outcome": "good",
+          "unlock": {
+            "key": "superior_tutorial_fisherman_met",
+            "notify": false
+          }
+        },
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.fisherman.goodbye"
+          },
+          "goto": "bye",
+          "unlock": {
+            "key": "superior_tutorial_fisherman_met",
+            "notify": false
+          }
+        }
+      ]
+    }
+  ],
+  "branches": {
+    "deal": [
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.2"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.3"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.4"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.5"
+        },
+        "choices": [
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.what_do_i_get"
+            },
+            "goto": "deal_get"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.where_sink"
+            },
+            "goto": "deal_where"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.ill_get_it"
+            },
+            "goto": "deal_yes",
+            "outcome": "good",
+            "unlock": {
+              "key": "superior_tutorial_fisherman_deal",
+              "notify": false
+            }
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.not_now"
+            },
+            "goto": "deal_no",
+            "outcome": "bad"
+          }
+        ]
+      }
+    ],
+    "deal_get": [
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.get"
+        },
+        "choices": [
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.what_do_i_get"
+            },
+            "goto": "deal_get"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.where_sink"
+            },
+            "goto": "deal_where"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.ill_get_it"
+            },
+            "goto": "deal_yes",
+            "outcome": "good",
+            "unlock": {
+              "key": "superior_tutorial_fisherman_deal",
+              "notify": false
+            }
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.not_now"
+            },
+            "goto": "deal_no",
+            "outcome": "bad"
+          }
+        ]
+      }
+    ],
+    "deal_where": [
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.where.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.where.2"
+        },
+        "choices": [
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.what_do_i_get"
+            },
+            "goto": "deal_get"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.where_sink"
+            },
+            "goto": "deal_where"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.ill_get_it"
+            },
+            "goto": "deal_yes",
+            "outcome": "good",
+            "unlock": {
+              "key": "superior_tutorial_fisherman_deal",
+              "notify": false
+            }
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.not_now"
+            },
+            "goto": "deal_no",
+            "outcome": "bad"
+          }
+        ]
+      }
+    ],
+    "deal_yes": [
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.yes"
+        }
+      }
+    ],
+    "deal_no": [
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.no"
+        }
+      }
+    ],
+    "who": [
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.who.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.who.2"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.who.3"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.who.4"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.who.5"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.who.6"
+        },
+        "choices": [
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.who"
+            },
+            "goto": "who",
+            "unlock": {
+              "key": "superior_tutorial_fisherman_met",
+              "notify": false
+            }
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.way_out"
+            },
+            "goto": "out",
+            "outcome": "good",
+            "unlock": {
+              "key": "superior_tutorial_fisherman_met",
+              "notify": false
+            }
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.goodbye"
+            },
+            "goto": "bye",
+            "unlock": {
+              "key": "superior_tutorial_fisherman_met",
+              "notify": false
+            }
+          }
+        ]
+      }
+    ],
+    "out": [
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.out.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.out.2"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.out.3"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.out.4"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.2"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.3"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.4"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.5"
+        },
+        "choices": [
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.what_do_i_get"
+            },
+            "goto": "deal_get"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.where_sink"
+            },
+            "goto": "deal_where"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.ill_get_it"
+            },
+            "goto": "deal_yes",
+            "outcome": "good",
+            "unlock": {
+              "key": "superior_tutorial_fisherman_deal",
+              "notify": false
+            }
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.not_now"
+            },
+            "goto": "deal_no",
+            "outcome": "bad"
+          }
+        ]
+      }
+    ],
+    "bye": [
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.bye"
+        }
+      }
+    ]
+  }
+}

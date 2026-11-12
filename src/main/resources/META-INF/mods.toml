@@ -8,7 +8,7 @@ version="${file.jarVersion}"
 displayName="SuperiorTutorial"
 authors="Mug (mugloved)"
 description='''
-The optional first cave of Superior: Larry, his bargain, and the class choice. An addon to SuperiorStory.
+The optional first cave of Superior: the Decaying Corpse, his bargain, and the workbench. An addon to SuperiorStory.
 '''
 
 [[dependencies.superior_tutorial]]
@@ -33,8 +33,29 @@ The optional first cave of Superior: Larry, his bargain, and the class choice. A
     side="BOTH"
 
 [[dependencies.superior_tutorial]]
+    modId="geckolib"
+    mandatory=true
+    versionRange="[4.8,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.superior_tutorial]]
     modId="superiorstory"
     mandatory=true
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.superior_tutorial]]
+    modId="superior_sounds"
+    mandatory=false
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.superior_tutorial]]
+    modId="sophisticatedbackpacks"
+    mandatory=false
     versionRange="[0,)"
     ordering="AFTER"
     side="BOTH"

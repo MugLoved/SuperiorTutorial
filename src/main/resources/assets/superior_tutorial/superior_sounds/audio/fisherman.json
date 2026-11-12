@@ -1,0 +1,25 @@
+{
+  "schema_version": 3,
+  "rules": {
+    "fisherman_voice": {
+      "sound": "fisherman.voice",
+      "event": "superiorstory:type",
+      "priority": 100,
+      "when": {
+        "superior_tutorial:fisherman_speaking": true
+      }
+    },
+    "fisherman_vanish": {
+      "sound": "fisherman.vanish",
+      "event": "superior_tutorial:fisherman_vanish"
+    },
+    "fisherman_appear": {
+      "sound": "fisherman.appear",
+      "event": "superior_tutorial:fisherman_appear"
+    },
+    "fisherman_ambient": {
+      "sound": "fisherman.ambient",
+      "event": "superior_tutorial:fisherman_ambient"
+    }
+  }
+}
