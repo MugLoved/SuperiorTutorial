@@ -1,0 +1,106 @@
+{
+  "npc": "superior_tutorial:fisherman",
+  "chat": true,
+  "priority": 5,
+  "if": {
+    "unlocked": "superior_tutorial_fisherman_deal"
+  },
+  "unless": {
+    "unlocked": "superior_tutorial_fisherman_done"
+  },
+  "beats": [
+    {
+      "text": {
+        "translate": "superior_tutorial.fisherman.wait.1"
+      },
+      "choices": [
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.fisherman.where_again"
+          },
+          "goto": "w_where"
+        },
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.fisherman.lost_it"
+          },
+          "goto": "w_lost"
+        },
+        {
+          "text": {
+            "translate": "superior_tutorial.choice.fisherman.later"
+          },
+          "goto": "w_later"
+        }
+      ]
+    }
+  ],
+  "branches": {
+    "w_where": [
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.wait.where"
+        },
+        "choices": [
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.where_again"
+            },
+            "goto": "w_where"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.lost_it"
+            },
+            "goto": "w_lost"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.later"
+            },
+            "goto": "w_later"
+          }
+        ]
+      }
+    ],
+    "w_lost": [
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.wait.lost.1"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.wait.lost.2"
+        },
+        "choices": [
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.where_again"
+            },
+            "goto": "w_where"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.lost_it"
+            },
+            "goto": "w_lost"
+          },
+          {
+            "text": {
+              "translate": "superior_tutorial.choice.fisherman.later"
+            },
+            "goto": "w_later"
+          }
+        ]
+      }
+    ],
+    "w_later": [
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.wait.later"
+        }
+      }
+    ]
+  }
+}

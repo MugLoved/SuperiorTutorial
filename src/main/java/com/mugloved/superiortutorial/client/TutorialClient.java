@@ -3,6 +3,7 @@ package com.mugloved.superiortutorial.client;
 import com.mugloved.superiortutorial.SuperiorTutorial;
 import com.mugloved.superiortutorial.entity.DecayingCorpse;
 import com.mugloved.superiortutorial.entity.DecayingCorpseState;
+import com.mugloved.superiortutorial.entity.Fisherman;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraftforge.api.distmarker.Dist;
@@ -20,6 +21,7 @@ public final class TutorialClient {
         @SubscribeEvent
         public static void renderers(EntityRenderersEvent.RegisterRenderers event) {
             event.registerEntityRenderer(SuperiorTutorial.DECAYING_CORPSE.get(), DecayingCorpseRenderer::new);
+            event.registerEntityRenderer(SuperiorTutorial.FISHERMAN.get(), FishermanRenderer::new);
         }
     }
 
@@ -43,6 +45,7 @@ public final class TutorialClient {
             Minecraft minecraft = Minecraft.getInstance();
             ClientLevel level = minecraft.level;
             CorpseAudio.ensureRegistered();
+            FishermanAudio.ensureRegistered();
             if (level == null || minecraft.player == null) {
                 lastLevel = null;
                 lastState = -1;
@@ -77,6 +80,11 @@ public final class TutorialClient {
             }
             lastState = state;
             for (DecayingCorpse corpse : nearby) DecayingCorpseEffects.tick(level, corpse);
+            for (Fisherman fisherman : level.getEntitiesOfClass(Fisherman.class, minecraft.player.getBoundingBox().inflate(64.0))) {
+                // Remembered so the renderer can tell the dialogue portrait (which turns him) from the world.
+                fisherman.clientTickBodyRot = fisherman.yBodyRot;
+                FishermanAudio.pending(fisherman);
+            }
         }
     }
 }

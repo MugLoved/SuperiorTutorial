@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "waterlogged=true": {
+      "model": "superior_tutorial:block/sunken_crate"
+    },
+    "waterlogged=false": {
+      "model": "superior_tutorial:block/sunken_crate"
+    }
+  }
+}

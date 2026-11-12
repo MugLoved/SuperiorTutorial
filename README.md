@@ -15,7 +15,9 @@ The player starts in a small, old cave that was never cleared. The Decaying Corp
 | Dialogue | Mug's six-step script, resuming at the step the player reached | done |
 | Satchel | Corpse's Satchel: 2 oak planks, 1 cobblestone, 2 andesite alloy, the same for everyone; any weapon counts | done |
 | Endings | Slay and Abandon on the new script; ending keys for Aho's FTB quests | done |
-| Later | The merchant in the cove; spawning inside the cave; light-blue / red choice hover (needs a SuperiorStory change: its choices carry no colour) | |
+| Cove | Mug's cave and cove cut from Mug's world, placed near spawn in new worlds; players start in the cave | done (needs testing in game) |
+| Haskel | Haskel Hobb, the fisherman in the cove: his model and animations, dock walking, the hit-and-vanish, his voice, the crate quest and its reward | done (placeholder lines for Mug to rewrite) |
+| Later | Haskel's voice from Mug's REAPER render; light-blue / red choice hover (needs a SuperiorStory change: its choices carry no colour) | |
 
 The class menu (categories, class pages, hold-to-choose, per-class kits, the Moldy Notes spell book) was dropped from the tutorial on 2026-10-10. Class choice happens afterwards in Aho's skill tree. The shelved design is kept in Mug's doc "Superior Class Path Archive".
 
@@ -100,12 +102,64 @@ All of them play through Superior Sounds (catalog `assets/superior_tutorial/supe
 
 Added to Story's registry by this mod. `"armed": true` is true when the player holds a weapon in the main hand; `"armed": false` when not. A weapon is a bow, crossbow or trident, or anything that adds attack damage in the main hand (swords, axes, modular weapons, and also pickaxes and other tools). Usable in any Story `if` / `unless`.
 
+## The cave and cove
+
+Mug's build, cut from Mug's world (box 42 -12 126 to 150 50 180) into `data/superior_tutorial/structures/cove.nbt`, 109 x 63 x 55. The cutter is `tools/cut.py` in the project's fisherman folder.
+
+- The file keeps only the open space inside (air, water, water plants), every block within 3 blocks of it, the surface within 5 blocks of the sinkhole's opening, and everything built above the surface. The rest is left out of the file, so the world's own rock and soil stay around it.
+- Mug's markers are gone (air). The Corpse (facing west, toward the cave) and Haskel (at his lime home spot, with his six yellow dock spots) are in the file as entities, and the sunken crate sits on the pond floor at the deepest point under the dock (123 -7 152 in Mug's world). All of them turn with the structure.
+- **New worlds:** when the server starts for the first time (`superior_tutorial_cove` saved data not yet written and the world younger than 10 seconds), the cove is placed once in the Overworld, in a random one of four turns, on the nearest even, dry ground to world spawn (searching up to 512 blocks out; ground over the cavern no more than 6 blocks uneven, no ocean, river or beach, at least 3 above sea level, the cave covered by at least 4 blocks of rock). The sinkhole's opening is cleared up to the sky. Placement takes a few seconds while the world loads. Older worlds never get it by themselves.
+- **First join:** each player is put once in the cave, ankle-deep in the water at its dark end, looking toward the Corpse (key `superior_tutorial_cave_started`). Their respawn point is not changed.
+- **Config** (`config/superior_tutorial-common.toml`): `placeCoveInNewWorlds` and `startPlayersInCave`, both on.
+- **Commands** (operators): `/superior_tutorial place_cove` places the cove so the sinkhole opens where you stand (unturned) and makes it this world's cove; `/superior_tutorial cave` takes you to the start point.
+
+## Haskel Hobb, the fisherman
+
+Working name. Entity `superior_tutorial:fisherman` (about a villager's size), spawn egg in the Spawn Eggs tab. Model, texture and animations are Mug's Legendary Pack trader, colour-swapped, with a rod on his pack (`geo/entity/fisherman.geo.json`, `textures/entity/fisherman.png`, `animations/entity/fisherman.animation.json`).
+
+- **Dock:** he only walks between his home spot and his dock spots, never into water or off an edge. He waits 20 to 60 seconds at a spot, then walks to another (about one walk in four goes home). Pushed or knocked more than 3 blocks off his spots, he walks back. Spots come from the structure (`HaskelSpotOffsets`, x y z triples from where he stands, turned with the structure) or are his own block when placed with the egg.
+- **People:** a player within 5 blocks makes him stop and face them; within 6 his head follows them (up to 70 degrees). His body turns only after his head has been turned far for a while, and slowly. Walking past him within 4 blocks sometimes gets a muttered line on the action bar.
+- **Hits:** he can't be hurt. A player's hit makes him vanish in a big cloud of smoke and step out again on the dock spot farthest from that player (or dry ground 8 to 12 blocks away), with a line for the attacker. A sneaking creative hit removes him, for editing. `/kill` and the void still work.
+- **Animations:** idle always; one of three fidgets (weight shift, pack settle, toe tap) every 15 to 40 seconds while he stands and nobody talks to him; the walk while he moves, sped up to match his pace.
+- **Sounds** (through Superior Sounds, catalog `superior_sounds/audio/fisherman.json`): his voice blips (`sounds/fisherman/voice_1-6.ogg`) replace Story's typing blip while the local player talks to him (signal `superior_tutorial:fisherman_speaking`); cue events `superior_tutorial:fisherman_vanish` and `fisherman_appear`.
+- Persistent: never despawns.
+
+### The crate quest
+
+A crate went off his dock into the pond while he was unloading. The player fishes it out and brings it back.
+
+- **Sunken Crate** (`superior_tutorial:sunken_crate`): the block on the pond floor; it can't be broken in survival. Using or hitting it hands the player **Haskel's Crate** (one at a time; nothing after the quest is done).
+- With a rod: a player who has taken the deal and casts within 6 blocks of the sunken crate (sideways; up to 14 below the bobber) hooks the crate instead of a catch half the time.
+- **Reward** (`"haskel_reward": true`, an action this mod adds to Story): takes the crate and gives **Haskel's Map**, an explorer map with a red X on the nearest village, and the **Haskelsack**, a Supplementaries sack filled from `superior_tutorial:sack/haskel`: Ryan (a crab in a bucket), cooked crab legs, cod rolls, salmon slices, fish stew, John Fish (a pufferfish), string, lily pads and Haskel's Spare Rod (Lure II). Without Supplementaries the items come loose. If no village can be found, he says so instead of giving a map.
+- `"has_haskel_crate": true` (a condition this mod adds): the player carries Haskel's Crate.
+
+| Key | Meaning |
+| --- | --- |
+| `superior_tutorial_fisherman_met` | The player met him. |
+| `superior_tutorial_fisherman_deal` | The player agreed to fish the crate out. |
+| `superior_tutorial_fisherman_done` | The crate was handed back and the reward given. |
+
+| Scene file | Priority | When |
+| --- | --- | --- |
+| `fisherman_meet.json` | 1 | not met, not done |
+| `fisherman_meet_left.json` | 2 | as above, and the player left the Corpse |
+| `fisherman_meet_slain.json` | 3 | as above, and the player ended the Corpse |
+| `fisherman_deal.json` | 4 | met, no deal yet |
+| `fisherman_waiting.json` | 5 | deal, not done |
+| `fisherman_handin_early.json` | 6 | carrying the crate (no deal yet) |
+| `fisherman_handin.json` | 7 | deal, carrying the crate |
+| `fisherman_after.json` | 8 | done |
+
+All his lines are placeholders for Mug to rewrite, in `en_us.json` under `superior_tutorial.fisherman.*` and `superior_tutorial.choice.fisherman.*`. The first meeting keeps the reward vague on purpose.
+
 ## Testing
 
 1. Put the jar in the pack's `mods` folder next to `superior_story.jar`, `superior_lib.jar`, `superior_sounds.jar`, Sophisticated Backpacks and GeckoLib.
 2. In a creative world, place the Corpse with the spawn egg, then switch to survival.
 3. Press the Talk key (R) while looking at him.
 4. To repeat a test: `/superior_lib lock @s superior_tutorial_decaying_corpse_step2`, then the same for `_bargain`, `_refused`, `_done`, `_slain` and `_left`. The Corpse goes straight back to waiting.
+5. The cove: create a new world (a normal one, not flat or void) and you start in the cave. In an existing world, stand on open ground and use `/superior_tutorial place_cove`, then `/superior_tutorial cave`.
+6. Haskel: talk to him (R), take the deal, then dive for the crate or fish over it, and bring it back. To repeat: lock `superior_tutorial_fisherman_met`, `_deal` and `_done`.
 
 What to look for:
 - Idle: he sits on the floor, back to the wall, breathing barely visibly; his eyes glow faintly at each breath; his head follows you within 8 blocks.

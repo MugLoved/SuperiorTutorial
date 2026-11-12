@@ -321,5 +321,43 @@
         "volume": 0.6
       }
     ]
+  },
+  "fisherman.voice": {
+    "sounds": [
+      "superior_tutorial:fisherman/voice_1",
+      "superior_tutorial:fisherman/voice_2",
+      "superior_tutorial:fisherman/voice_3",
+      "superior_tutorial:fisherman/voice_4",
+      "superior_tutorial:fisherman/voice_5",
+      "superior_tutorial:fisherman/voice_6"
+    ]
+  },
+  "fisherman.vanish": {
+    "sounds": [
+      {
+        "name": "minecraft:mob/illusion_illager/mirror_move1",
+        "pitch": 0.8,
+        "volume": 0.9
+      },
+      {
+        "name": "minecraft:mob/illusion_illager/mirror_move2",
+        "pitch": 0.8,
+        "volume": 0.9
+      }
+    ]
+  },
+  "fisherman.appear": {
+    "sounds": [
+      {
+        "name": "minecraft:liquid/splash",
+        "pitch": 1.1,
+        "volume": 0.5
+      },
+      {
+        "name": "minecraft:liquid/splash2",
+        "pitch": 1.1,
+        "volume": 0.5
+      }
+    ]
   }
 }

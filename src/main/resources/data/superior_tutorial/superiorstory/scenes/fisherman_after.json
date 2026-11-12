@@ -1,0 +1,15 @@
+{
+  "npc": "superior_tutorial:fisherman",
+  "chat": true,
+  "priority": 8,
+  "if": {
+    "unlocked": "superior_tutorial_fisherman_done"
+  },
+  "beats": [
+    {
+      "text": {
+        "translate": "superior_tutorial.fisherman.after"
+      }
+    }
+  ]
+}
