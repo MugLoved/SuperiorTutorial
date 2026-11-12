@@ -33,9 +33,7 @@ import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -56,7 +54,7 @@ import java.util.UUID;
  */
 public class Fisherman extends PathfinderMob implements GeoEntity {
     public static final float MAX_HEAD_TURN = 70.0f;
-    static final double STOP_RANGE = 5.0;
+    static final double STOP_RANGE = 3.0;
     static final double WATCH_RANGE = 6.0;
     /** Walking speed: about a third of a block a second (his walk animation is made for 0.28; it is sped up to match). */
     private static final double SPEED = 0.011;
@@ -64,7 +62,6 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
     private static final int HIT_COOLDOWN_TICKS = 60;
     private static final int APPEAR_DELAY_TICKS = 4;
     private static final double MIN_VANISH_DISTANCE = 8.0;
-    private static final int PASSING_LINE_COOLDOWN = 20 * 45;
 
     public static final byte EVENT_VANISH = 101;
     public static final byte EVENT_APPEAR = 102;
@@ -93,7 +90,6 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
     private long lastVanish = -1000;
     private int appearIn;
     private UUID lastAttacker;
-    private final Map<UUID, Long> lastPassingLine = new HashMap<>();
 
     // What the local player sees (set on the client only; never read on the server).
     /** True from the vanish until he steps out again, so his slide to the new spot is never seen. */
@@ -113,10 +109,9 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
         super(type, level);
         setPersistenceRequired();
         setCanPickUpLoot(false);
-        // Water and its edges are walls to him.
+        // Water is a wall to him. (Not its edges: his dock stands on waterlogged posts, so every dock board counts as
+        // a water edge, and treating those as walls left him nowhere to walk.)
         setPathfindingMalus(BlockPathTypes.WATER, -1.0f);
-        setPathfindingMalus(BlockPathTypes.WATER_BORDER, -1.0f);
-        setPathfindingMalus(BlockPathTypes.DANGER_OTHER, -1.0f);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -191,7 +186,6 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
             }
             if (appearIn > 0 && --appearIn == 0) appear();
             if (isNoAi()) watchWhileHeld();
-            if (tickCount % 20 == 0) passingLines();
         }
         super.tick();
     }
@@ -212,18 +206,6 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
     public void setYHeadRot(float yaw) {
         if (!level().isClientSide && isNoAi()) return;
         super.setYHeadRot(yaw);
-    }
-
-    /** "Fish aren't biting." and the like, to a player walking past (not too often, and never mid-conversation). */
-    private void passingLines() {
-        if (isNoAi() || random.nextInt(4) != 0) return;
-        Player player = level().getNearestPlayer(this, 4.0);
-        if (!(player instanceof ServerPlayer server) || player.isSpectator()) return;
-        long now = level().getGameTime();
-        Long last = lastPassingLine.get(player.getUUID());
-        if (last != null && now - last < PASSING_LINE_COOLDOWN) return;
-        lastPassingLine.put(player.getUUID(), now);
-        server.displayClientMessage(Component.translatable("superior_tutorial.fisherman.passing." + (1 + random.nextInt(3))), true);
     }
 
     @Override

@@ -15,7 +15,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
@@ -45,7 +44,7 @@ import java.util.Optional;
  *   <li>The file holds only the open space inside, the rock within 3 blocks of it, the surface around the opening
  *   and the builds above it. Everything else is left out, so the world's own rock and soil stay around it. The
  *   sinkhole's opening is cleared up to the sky.</li>
- *   <li>The Corpse, Haskel and the crate are in the file, so they turn with it.</li>
+ *   <li>The Corpse and his workbench, Haskel and the crate are in the file. The cove is always placed unturned.</li>
  *   <li>Each player starts in the cave the first time they join (key {@link #CAVE_STARTED}).</li>
  * </ul>
  */
@@ -89,8 +88,9 @@ public final class CovePlacer {
             data.skip();
             return;
         }
-        RandomSource random = RandomSource.create(level.getSeed() ^ 0x5C0FFEEL);
-        Rotation rotation = Rotation.getRandom(random);
+        // Never turned: some modded blocks in the build (Quark posts, for one) don't turn with a structure, so a turned
+        // cove put them on the wrong axis.
+        Rotation rotation = Rotation.NONE;
         BlockPos origin = findSite(level, template.get(), rotation);
         if (origin == null) {
             SuperiorTutorial.LOGGER.warn("No place near spawn for the tutorial cove; use /superior_tutorial place_cove");

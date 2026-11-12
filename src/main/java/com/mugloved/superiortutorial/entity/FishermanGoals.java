@@ -26,7 +26,7 @@ final class FishermanGoals {
         return best;
     }
 
-    /** A player within 5 blocks: he stops where he is (finishing his step) and turns to them, head first. */
+    /** A player within 3 blocks: he stops where he is (finishing his step) and turns to them, head first. */
     static final class StopForPlayer extends Goal {
         private final Fisherman fisherman;
         private Player target;
@@ -101,10 +101,10 @@ final class FishermanGoals {
         }
     }
 
-    /** He stays at a spot 20 to 60 seconds, then walks to another; about one walk in four goes home. */
+    /** He stays at a spot 15 to 35 seconds, then walks to another; about one walk in four goes home. */
     static final class WalkTheDock extends Goal {
         private final Fisherman fisherman;
-        private int waitTicks = 200;
+        private int waitTicks = 100;
         private BlockPos goal;
 
         WalkTheDock(Fisherman fisherman) {
@@ -115,7 +115,7 @@ final class FishermanGoals {
         @Override
         public boolean canUse() {
             if (--waitTicks > 0) return false;
-            waitTicks = 400 + fisherman.getRandom().nextInt(801);
+            waitTicks = 300 + fisherman.getRandom().nextInt(401);
             List<BlockPos> all = fisherman.allSpots();
             if (all.size() < 2) return false;
             BlockPos here = fisherman.nearestSpot();

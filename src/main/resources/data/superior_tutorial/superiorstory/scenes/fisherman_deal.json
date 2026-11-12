@@ -34,18 +34,6 @@
         },
         {
           "text": {
-            "translate": "superior_tutorial.choice.fisherman.whats_in_it"
-          },
-          "goto": "deal_in"
-        },
-        {
-          "text": {
-            "translate": "superior_tutorial.choice.fisherman.what_do_i_get"
-          },
-          "goto": "deal_get"
-        },
-        {
-          "text": {
             "translate": "superior_tutorial.choice.fisherman.where_sink"
           },
           "goto": "deal_where"
@@ -95,57 +83,6 @@
         "choices": [
           {
             "text": {
-              "translate": "superior_tutorial.choice.fisherman.whats_in_it"
-            },
-            "goto": "deal_in"
-          },
-          {
-            "text": {
-              "translate": "superior_tutorial.choice.fisherman.what_do_i_get"
-            },
-            "goto": "deal_get"
-          },
-          {
-            "text": {
-              "translate": "superior_tutorial.choice.fisherman.where_sink"
-            },
-            "goto": "deal_where"
-          },
-          {
-            "text": {
-              "translate": "superior_tutorial.choice.fisherman.ill_get_it"
-            },
-            "goto": "deal_yes",
-            "outcome": "good",
-            "unlock": {
-              "key": "superior_tutorial_fisherman_deal",
-              "notify": false
-            }
-          },
-          {
-            "text": {
-              "translate": "superior_tutorial.choice.fisherman.not_now"
-            },
-            "goto": "deal_no",
-            "outcome": "bad"
-          }
-        ]
-      }
-    ],
-    "deal_in": [
-      {
-        "text": {
-          "translate": "superior_tutorial.fisherman.deal.in"
-        },
-        "choices": [
-          {
-            "text": {
-              "translate": "superior_tutorial.choice.fisherman.whats_in_it"
-            },
-            "goto": "deal_in"
-          },
-          {
-            "text": {
               "translate": "superior_tutorial.choice.fisherman.what_do_i_get"
             },
             "goto": "deal_get"
@@ -183,12 +120,6 @@
           "translate": "superior_tutorial.fisherman.deal.get"
         },
         "choices": [
-          {
-            "text": {
-              "translate": "superior_tutorial.choice.fisherman.whats_in_it"
-            },
-            "goto": "deal_in"
-          },
           {
             "text": {
               "translate": "superior_tutorial.choice.fisherman.what_do_i_get"
@@ -233,12 +164,6 @@
           "translate": "superior_tutorial.fisherman.deal.where.2"
         },
         "choices": [
-          {
-            "text": {
-              "translate": "superior_tutorial.choice.fisherman.whats_in_it"
-            },
-            "goto": "deal_in"
-          },
           {
             "text": {
               "translate": "superior_tutorial.choice.fisherman.what_do_i_get"
