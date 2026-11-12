@@ -17,6 +17,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.BodyRotationControl;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.OpenDoorGoal;
+import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Mirror;
@@ -50,19 +52,22 @@ import java.util.UUID;
  * </ul>
  *
  * <p>Spots: placed by the tutorial with {@link #setSpots}, or from NBT. {@code HaskelSpotOffsets} (x, y, z triples
- * relative to where he stands when first ticked) is for structure files, and turns with the structure.
+ * relative to where he stands when first ticked) is for structure files, and turns with the structure; so does
+ * {@code HaskelHouseOffset}, one more spot he walks to (inside his house) that a hit never sends him to. Where he
+ * stands when first ticked is his home, the spot he likes best: in the cove, the end of his dock, where a player
+ * coming out of the cave sees him first.
  */
 public class Fisherman extends PathfinderMob implements GeoEntity {
     public static final float MAX_HEAD_TURN = 70.0f;
     static final double STOP_RANGE = 3.0;
     static final double WATCH_RANGE = 6.0;
     /**
-     * Walking speed: about 0.3 blocks a second, a slow amble (his walk animation is made for 0.28 and is matched to his
-     * real speed). A land mob's ground speed grows with the square of this value: 0.0825 settles at 0.015 blocks a
-     * tick. (It was 0.011, which works out at under a hundredth of a block a second, so he never got anywhere.)
+     * Walking speed: about 1 block a second, an unhurried walk (his walk animation is made for 1.0 and is matched to
+     * his real speed). A land mob's ground speed grows with the square of this value: 0.155 settles at about 0.053
+     * blocks a tick. (0.0825, about 0.3 blocks a second, read as a quarter of sneaking.)
      */
-    private static final double SPEED = 0.0825;
-    public static final double WALK_ANIMATION_SPEED = 0.28;
+    private static final double SPEED = 0.155;
+    public static final double WALK_ANIMATION_SPEED = 1.0;
     private static final int HIT_COOLDOWN_TICKS = 60;
     private static final int APPEAR_DELAY_TICKS = 4;
     private static final double MIN_VANISH_DISTANCE = 8.0;
@@ -86,6 +91,8 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
     private static final String HOME_TAG = "HaskelHome";
     private static final String SPOTS_TAG = "HaskelSpots";
     private static final String OFFSETS_TAG = "HaskelSpotOffsets";
+    private static final String HOUSE_TAG = "HaskelHouse";
+    private static final String HOUSE_OFFSET_TAG = "HaskelHouseOffset";
 
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.haskel_hobb.idle");
     private static final RawAnimation WALK = RawAnimation.begin().thenLoop("animation.haskel_hobb.walk");
@@ -103,6 +110,9 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
     private final List<BlockPos> spots = new ArrayList<>();
     /** Spot offsets from the structure file, resolved against his position on his first tick. */
     private final List<BlockPos> pendingOffsets = new ArrayList<>();
+    /** His spot in the house (walked to, never vanished to), and its offset from a structure file until resolved. */
+    private BlockPos house;
+    private BlockPos pendingHouseOffset;
 
     private long lastVanish = -1000;
     private long heldTouchedAt;
@@ -134,13 +144,15 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
         // Water is a wall to him. (Not its edges: his dock stands on waterlogged posts, so every dock board counts as
         // a water edge, and treating those as walls left him nowhere to walk.)
         setPathfindingMalus(BlockPathTypes.WATER, -1.0f);
+        // His house has doors: he opens them, walks through and closes them behind him (see OpenDoorGoal below).
+        if (getNavigation() instanceof GroundPathNavigation ground) ground.setCanOpenDoors(true);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
             .add(Attributes.MAX_HEALTH, 20.0)
             .add(Attributes.MOVEMENT_SPEED, SPEED)
-            .add(Attributes.FOLLOW_RANGE, 24.0)
+            .add(Attributes.FOLLOW_RANGE, 32.0)   // how far he can plan a walk (house to dock end and back)
             .add(Attributes.KNOCKBACK_RESISTANCE, 1.0);
     }
 
@@ -152,17 +164,24 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
         spots.clear();
         for (BlockPos spot : dockSpots) spots.add(spot.immutable());
         pendingOffsets.clear();
+        pendingHouseOffset = null;
+    }
+
+    /** A spot inside his house he walks to now and then (never one a hit sends him to). */
+    public void setHouse(BlockPos house) {
+        this.house = house == null ? null : house.immutable();
     }
 
     public BlockPos home() {
         return home;
     }
 
-    /** Home first, then the dock spots. */
+    /** Home first, then the dock spots, then the house. */
     List<BlockPos> allSpots() {
-        List<BlockPos> all = new ArrayList<>(spots.size() + 1);
+        List<BlockPos> all = new ArrayList<>(spots.size() + 2);
         if (home != null) all.add(home);
         all.addAll(spots);
+        if (house != null) all.add(house);
         return all;
     }
 
@@ -182,16 +201,19 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
     @Override
     public float rotate(Rotation rotation) {
         pendingOffsets.replaceAll(offset -> offset.rotate(rotation));
+        if (pendingHouseOffset != null) pendingHouseOffset = pendingHouseOffset.rotate(rotation);
         return super.rotate(rotation);
     }
 
     @Override
     public float mirror(Mirror mirror) {
-        pendingOffsets.replaceAll(offset -> switch (mirror) {
+        java.util.function.UnaryOperator<BlockPos> flip = offset -> switch (mirror) {
             case LEFT_RIGHT -> new BlockPos(offset.getX(), offset.getY(), -offset.getZ());
             case FRONT_BACK -> new BlockPos(-offset.getX(), offset.getY(), offset.getZ());
             default -> offset;
-        });
+        };
+        pendingOffsets.replaceAll(flip);
+        if (pendingHouseOffset != null) pendingHouseOffset = flip.apply(pendingHouseOffset);
         return super.mirror(mirror);
     }
 
@@ -205,6 +227,8 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
                 home = blockPosition();
                 for (BlockPos offset : pendingOffsets) spots.add(home.offset(offset));
                 pendingOffsets.clear();
+                if (pendingHouseOffset != null) house = home.offset(pendingHouseOffset);
+                pendingHouseOffset = null;
             }
             if (appearIn > 0 && --appearIn == 0) appear();
             long now = level().getGameTime();
@@ -275,6 +299,7 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
     @Override
     protected void registerGoals() {
         goalSelector.addGoal(0, new FloatGoal(this));
+        goalSelector.addGoal(1, new OpenDoorGoal(this, true));
         goalSelector.addGoal(1, new FishermanGoals.StopForPlayer(this));
         goalSelector.addGoal(2, new FishermanGoals.ReturnToDock(this));
         goalSelector.addGoal(3, new FishermanGoals.WalkTheDock(this));
@@ -385,14 +410,16 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
     }
 
     /**
-     * Where a hit sends him: the dock spot farthest from the player (his home spot is not one of them), preferably 8
-     * or more blocks off. Without dock spots, a dry spot 8 to 12 blocks away.
+     * Where a hit sends him: the spot on his dock (home or a dock spot, never the house) farthest from the player,
+     * preferably 8 or more blocks off. Without any, a dry spot 8 to 12 blocks away.
      */
     private Vec3 vanishTarget(Player from) {
         Vec3 best = null;
         double bestDistance = -1.0;
         boolean bestFar = false;
-        for (BlockPos spot : spots) {
+        List<BlockPos> dock = new ArrayList<>(spots);
+        if (home != null) dock.add(home);
+        for (BlockPos spot : dock) {
             Vec3 stand = standingPoint(spot);
             if (stand == null) continue;
             double distance = stand.distanceToSqr(from.position());
@@ -528,6 +555,10 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
         long[] packed = new long[spots.size()];
         for (int i = 0; i < packed.length; i++) packed[i] = spots.get(i).asLong();
         tag.putLongArray(SPOTS_TAG, packed);
+        if (house != null) tag.putLong(HOUSE_TAG, house.asLong());
+        if (pendingHouseOffset != null) {
+            tag.putIntArray(HOUSE_OFFSET_TAG, new int[] {pendingHouseOffset.getX(), pendingHouseOffset.getY(), pendingHouseOffset.getZ()});
+        }
         if (!pendingOffsets.isEmpty()) {
             int[] offsets = new int[pendingOffsets.size() * 3];
             for (int i = 0; i < pendingOffsets.size(); i++) {
@@ -549,7 +580,10 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
         pendingOffsets.clear();
         int[] offsets = tag.getIntArray(OFFSETS_TAG);
         for (int i = 0; i + 2 < offsets.length; i += 3) pendingOffsets.add(new BlockPos(offsets[i], offsets[i + 1], offsets[i + 2]));
-        if (!pendingOffsets.isEmpty()) home = null;   // a structure copy: resolve the offsets where he now stands
+        house = tag.contains(HOUSE_TAG) ? BlockPos.of(tag.getLong(HOUSE_TAG)) : null;
+        int[] houseOffset = tag.getIntArray(HOUSE_OFFSET_TAG);
+        pendingHouseOffset = houseOffset.length == 3 ? new BlockPos(houseOffset[0], houseOffset[1], houseOffset[2]) : null;
+        if (!pendingOffsets.isEmpty() || pendingHouseOffset != null) home = null;   // a structure copy: resolve the offsets where he now stands
     }
 
     // ---- Animation --------------------------------------------------------------------------------------------

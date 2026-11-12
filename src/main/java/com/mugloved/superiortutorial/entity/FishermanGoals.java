@@ -71,7 +71,11 @@ final class FishermanGoals {
         }
     }
 
-    /** Pushed, knocked or teleported off his spots (more than 3 blocks from all of them): walk back to the nearest. */
+    /**
+     * Pushed, knocked or teleported off his spots (more than 3 blocks from all of them): walk back to the nearest.
+     * Never while he is on his way somewhere: halfway between two spots he is off all of them too, and this used to
+     * turn him back a few steps out of his door every time.
+     */
     static final class ReturnToDock extends Goal {
         private final Fisherman fisherman;
         private BlockPos goal;
@@ -86,6 +90,7 @@ final class FishermanGoals {
         public boolean canUse() {
             if (--retry > 0) return false;
             retry = 40;
+            if (!fisherman.getNavigation().isDone()) return false;
             goal = fisherman.nearestSpot();
             return goal != null && goal.distToCenterSqr(fisherman.position()) > 9.0;
         }
@@ -102,8 +107,9 @@ final class FishermanGoals {
     }
 
     /**
-     * He stays at a spot 20 to 40 seconds (and lets a fidget finish), then walks to another spot he can reach; about
-     * one walk in four goes home. Timed by the clock, not by how often the game asks.
+     * He stays at a spot 20 to 40 seconds (and lets a fidget finish), then walks to another spot he can reach. Home
+     * (the dock end) is his favourite: every other walk goes back there, and he stays there 1 to 3 minutes. Timed by
+     * the clock, not by how often the game asks.
      */
     static final class WalkTheDock extends Goal {
         private final Fisherman fisherman;
@@ -119,7 +125,11 @@ final class FishermanGoals {
         @Override
         public boolean canUse() {
             long now = fisherman.level().getGameTime();
-            if (nextWalkAt < 0) nextWalkAt = now + 400 + fisherman.getRandom().nextInt(401);
+            if (nextWalkAt < 0) {
+                BlockPos at = fisherman.nearestSpot();
+                boolean atHome = at != null && at.equals(fisherman.home()) && at.distToCenterSqr(fisherman.position()) <= 4.0;
+                nextWalkAt = atHome ? now + 1200 + fisherman.getRandom().nextInt(2401) : now + 400 + fisherman.getRandom().nextInt(401);
+            }
             if (now < nextWalkAt || fisherman.fidgeting()) return false;
             List<BlockPos> all = fisherman.allSpots();
             if (all.size() < 2) return false;
@@ -128,7 +138,7 @@ final class FishermanGoals {
             List<BlockPos> others = new java.util.ArrayList<>(all);
             others.remove(here);
             java.util.Collections.shuffle(others, new java.util.Random(fisherman.getRandom().nextLong()));
-            if (home != null && !home.equals(here) && fisherman.getRandom().nextInt(4) == 0) {
+            if (home != null && !home.equals(here) && fisherman.getRandom().nextInt(2) == 0) {
                 others.remove(home);
                 others.add(0, home);
             }

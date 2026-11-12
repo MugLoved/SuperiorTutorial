@@ -74,8 +74,8 @@ final class FishermanAudio {
 
     /**
      * Now and then, while he isn't talking or hidden in smoke, a low villager grumble (event
-     * {@code superior_tutorial:fisherman_ambient}; the sound is a villager's idle at 0.72 pitch, which also slows
-     * it, see sounds.json). Each player's game times its own.
+     * {@code superior_tutorial:fisherman_ambient}; the sound is a villager's idle at 0.5 pitch, the lowest the game
+     * plays, which also slows it, see sounds.json). Each player's game times its own.
      */
     static void ambient(Fisherman fisherman, net.minecraft.util.RandomSource random, long now) {
         if (fisherman.isNoAi() || fisherman.clientHidden) {

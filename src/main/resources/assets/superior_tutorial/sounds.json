@@ -385,18 +385,18 @@
     "sounds": [
       {
         "name": "minecraft:mob/villager/idle1",
-        "pitch": 0.72,
-        "volume": 0.4
+        "pitch": 0.5,
+        "volume": 0.5
       },
       {
         "name": "minecraft:mob/villager/idle2",
-        "pitch": 0.72,
-        "volume": 0.4
+        "pitch": 0.5,
+        "volume": 0.5
       },
       {
         "name": "minecraft:mob/villager/idle3",
-        "pitch": 0.72,
-        "volume": 0.4
+        "pitch": 0.5,
+        "volume": 0.5
       }
     ]
   }

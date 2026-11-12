@@ -8,6 +8,9 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -21,6 +24,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.RandomState;
@@ -38,8 +42,10 @@ import net.minecraftforge.fml.common.Mod;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -51,7 +57,8 @@ import java.util.Set;
  *   itself ({@code /superior_tutorial place_cove} puts it where an operator stands).</li>
  *   <li>The file holds only the open space inside, the rock within 3 blocks of it, the surface around the opening
  *   and the builds above it. Everything else is left out, so the world's own rock and soil stay around it. The
- *   sinkhole's opening is cleared up to the sky.</li>
+ *   world over the opening, rim and walls is cleared up to the sky, and higher ground around is sloped down to the
+ *   rim.</li>
  *   <li>A new world's site is chosen before its first chunk is made, and from then on world generation grows no
  *   trees or plants over or into the cove ({@link CoveGuard}), so nothing has to be taken down afterwards (which
  *   distant-terrain mods never saw). In an older world, {@code place_cove} takes down any tree in or leaning over
@@ -260,7 +267,7 @@ public final class CovePlacer {
     private static final int TREE_RING = CoveGuard.TREE_RING;
 
     /**
-     * Takes down every tree in or near the opening, whole: all logs and leaves touching it, so no branch or canopy is
+     * Takes down every tree in or near the cove's top, whole: all logs and leaves touching it, so no branch or canopy is
      * left in the air. Blocks of the cove itself ({@code keep}) are never touched, and unloaded chunks are left alone.
      */
     private static void clearTrees(ServerLevel level, List<BlockPos> openingColumns, int surfaceY, BlockPos min, BlockPos max,
@@ -309,36 +316,112 @@ public final class CovePlacer {
         if (removed > 0) SuperiorTutorial.LOGGER.info("Took down {} tree blocks over the tutorial cove", removed);
     }
 
-    /** The opening's columns (world positions at the surface). */
-    private static List<BlockPos> openingColumns(StructureTemplate template, BlockPos origin, StructurePlaceSettings settings) {
-        int surfaceY = origin.getY() + SURFACE;
-        List<BlockPos> opening = new ArrayList<>();
-        for (StructureTemplate.StructureBlockInfo info : template.filterBlocks(origin, settings, Blocks.AIR)) {
-            if (info.pos().getY() == surfaceY) opening.add(info.pos());
+    /** Past the cove's top, the ground is brought down to at most this many blocks above its rim, one block a step. */
+    private static final int BLEND = 6;
+
+    /**
+     * The world columns of the cove's top: every column where the file has something in its top layers (the opening,
+     * the rim, the walls and builds above the surface).
+     */
+    private static Set<Long> topColumns(StructureTemplate template, BlockPos origin, StructurePlaceSettings settings) {
+        Set<Long> top = new HashSet<>();
+        CompoundTag saved = template.save(new CompoundTag());
+        ListTag blocks = saved.getList("blocks", Tag.TAG_COMPOUND);
+        for (int i = 0; i < blocks.size(); i++) {
+            ListTag pos = blocks.getCompound(i).getList("pos", Tag.TAG_INT);
+            if (pos.getInt(1) < SURFACE - 3) continue;
+            BlockPos local = new BlockPos(pos.getInt(0), pos.getInt(1), pos.getInt(2));
+            BlockPos world = StructureTemplate.calculateRelativePosition(settings, local).offset(origin);
+            top.add(BlockPos.asLong(world.getX(), 0, world.getZ()));
         }
-        return opening;
+        return top;
     }
 
     /**
-     * Takes down any trees over the opening (none in a new world, where generation never grew them; this is for
-     * {@code place_cove} in an older world), clears it up to the sky, then places the file (blocks, chests, the NPCs).
+     * Clears the world above the cove's top so it is open to the sky: nothing of the world is left over the opening,
+     * the rim or the walls (the file then puts its own rim, walls and builds back). Around it, ground higher than the
+     * rim is brought down to slope up one block a step for {@link #BLEND} blocks, so the rim meets the land around it
+     * instead of sitting in a pit; a column with a tree on it is left alone, and bared dirt gets the grass (or sand,
+     * podzol...) that was on top before.
+     */
+    private static void openTop(ServerLevel level, Set<Long> top, int surfaceY) {
+        Map<Long, Integer> distance = new HashMap<>();
+        Deque<Long> queue = new ArrayDeque<>();
+        for (long column : top) {
+            distance.put(column, 0);
+            queue.add(column);
+        }
+        while (!queue.isEmpty()) {
+            long column = queue.poll();
+            int d = distance.get(column);
+            if (d >= BLEND) continue;
+            int x = BlockPos.getX(column), z = BlockPos.getZ(column);
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    long next = BlockPos.asLong(x + dx, 0, z + dz);
+                    if (!distance.containsKey(next)) {
+                        distance.put(next, d + 1);
+                        queue.add(next);
+                    }
+                }
+            }
+        }
+        BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+        int cleared = 0;
+        for (Map.Entry<Long, Integer> entry : distance.entrySet()) {
+            int x = BlockPos.getX(entry.getKey()), z = BlockPos.getZ(entry.getKey());
+            int d = entry.getValue();
+            int cap = surfaceY + d;
+            int worldTop = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);   // the first air above everything
+            if (worldTop <= cap + 1) continue;
+            BlockState skin = null;
+            if (d > 0) {
+                boolean tree = false;
+                for (int y = worldTop - 1; y > cap; y--) {
+                    BlockState state = level.getBlockState(at.set(x, y, z));
+                    if (CoveGuard.isTree(state)) {
+                        tree = true;
+                        break;
+                    }
+                    if (skin == null && !state.isAir() && !CoveGuard.isPlant(state) && !state.is(Blocks.SNOW)) skin = state;
+                }
+                if (tree) continue;
+            }
+            for (int y = cap + 1; y < worldTop; y++) {
+                at.set(x, y, z);
+                if (!level.getBlockState(at).isAir()) {
+                    level.setBlock(at, Blocks.AIR.defaultBlockState(), 2);
+                    cleared++;
+                }
+            }
+            if (skin != null && !skin.is(Blocks.DIRT) && level.getBlockState(at.set(x, cap, z)).is(Blocks.DIRT)) {
+                level.setBlock(at, skin, 2);
+            }
+        }
+        if (cleared > 0) SuperiorTutorial.LOGGER.info("Cleared {} blocks of ground over the tutorial cove", cleared);
+    }
+
+    /**
+     * Makes (or loads) every chunk around the cove first: the world's heights are only known for loaded chunks, and a
+     * site away from spawn has none loaded yet when the server starts (that left the opening and walls buried under
+     * the world's ground). Then takes down any trees over the top (none in a new world, where generation never grew
+     * them; this is for {@code place_cove} in an older world), opens it to the sky, and places the file (blocks,
+     * chests, the NPCs).
      */
     static void place(ServerLevel level, StructureTemplate template, BlockPos origin, Rotation rotation) {
         StructurePlaceSettings settings = settings(rotation);
         int surfaceY = origin.getY() + SURFACE;
-        List<BlockPos> opening = openingColumns(template, origin, settings);
         var size = template.getSize(rotation);
         BlockPos min = origin.offset(-TREE_MARGIN, 0, -TREE_MARGIN);
         BlockPos max = origin.offset(size.getX() + TREE_MARGIN, 0, size.getZ() + TREE_MARGIN);
-        clearTrees(level, opening, surfaceY, min, max, Set.of());
-        for (BlockPos column : opening) {
-            int top = level.getHeight(Heightmap.Types.WORLD_SURFACE, column.getX(), column.getZ());
-            BlockPos.MutableBlockPos at = column.mutable();
-            for (int y = surfaceY + 1; y < top; y++) {
-                at.setY(y);
-                if (!level.getBlockState(at).isAir()) level.setBlock(at, Blocks.AIR.defaultBlockState(), 2);
-            }
+        for (int cx = min.getX() >> 4; cx <= max.getX() >> 4; cx++) {
+            for (int cz = min.getZ() >> 4; cz <= max.getZ() >> 4; cz++) level.getChunk(cx, cz);
         }
+        Set<Long> top = topColumns(template, origin, settings);
+        List<BlockPos> topAtSurface = new ArrayList<>(top.size());
+        for (long column : top) topAtSurface.add(new BlockPos(BlockPos.getX(column), surfaceY, BlockPos.getZ(column)));
+        clearTrees(level, topAtSurface, surfaceY, min, max, Set.of());
+        openTop(level, top, surfaceY);
         template.placeInWorld(level, origin, origin, settings, level.getRandom(), 2);
         // Chunks made from here on must not grow anything into it.
         CoveGuard.set(template, origin, surfaceY, true);
