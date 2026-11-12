@@ -14,11 +14,13 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BiomeTags;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.RandomState;
@@ -31,9 +33,13 @@ import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Puts Mug's cave and cove (structures/cove.nbt, cut from Mug's world) into the world.
@@ -44,7 +50,11 @@ import java.util.Optional;
  *   <li>The file holds only the open space inside, the rock within 3 blocks of it, the surface around the opening
  *   and the builds above it. Everything else is left out, so the world's own rock and soil stay around it. The
  *   sinkhole's opening is cleared up to the sky.</li>
- *   <li>The Corpse and his workbench, Haskel and the crate are in the file. The cove is always placed unturned.</li>
+ *   <li>Any tree standing in or leaning over the opening is taken down whole first, so nothing is left floating.</li>
+ *   <li>The Corpse and his workbench, Haskel and the chests are in the file. The cave's chests and the one under the
+ *   dock have loot tables ({@code chests/cove_secret}, {@code chests/cove_sunken}, which always holds Haskel's crate),
+ *   so Lootr gives every player their own. The cove is always placed unturned, and blocks keep exactly the shape they
+ *   were saved with (posts, fences and the like are not reconnected).</li>
  *   <li>Each player starts in the cave the first time they join (key {@link #CAVE_STARTED}).</li>
  * </ul>
  */
@@ -61,8 +71,8 @@ public final class CovePlacer {
     private static final int CAVE_TOP = 24;
     /** The cave is x 0..40 of the file; the cavern and pond are x 41 and up. */
     private static final int CAVERN_FROM_X = 41;
-    /** Where a new player starts: ankle-deep water at the dark end of the cave, looking toward the Corpse. */
-    private static final Vec3 SPAWN = new Vec3(3.5, 13.0, 19.5);
+    /** Where a new player starts: on the first rock out of the water at the dark end of the cave, facing the Corpse. */
+    private static final Vec3 SPAWN = new Vec3(5.5, 14.0, 20.5);
     private static final float SPAWN_YAW = -90.0f;
 
     /** Ground over the cavern may be this many blocks uneven; more and the rim floats or gets buried. */
@@ -113,7 +123,9 @@ public final class CovePlacer {
             .setMirror(Mirror.NONE)
             .setRotationPivot(BlockPos.ZERO)
             .setIgnoreEntities(false)
-            .setKeepLiquids(false);
+            .setKeepLiquids(false)
+            // Blocks keep the shape they were saved with; reshaping turned Mug's posts the wrong way.
+            .setKnownShape(true);
     }
 
     /** A file point in the world. */
@@ -194,14 +206,75 @@ public final class CovePlacer {
         return best;
     }
 
-    /** Clears the sinkhole's opening up to the sky, then places the file (blocks, the NPCs, the crate). */
+    /** Tree blocks a cleared opening could leave floating. */
+    private static boolean isTree(BlockState state) {
+        return state.is(BlockTags.LOGS) || state.is(BlockTags.LEAVES) || state.is(BlockTags.WART_BLOCKS)
+            || state.is(Blocks.VINE) || state.is(Blocks.BEE_NEST) || state.is(Blocks.COCOA)
+            || state.is(Blocks.MUSHROOM_STEM) || state.is(Blocks.BROWN_MUSHROOM_BLOCK) || state.is(Blocks.RED_MUSHROOM_BLOCK)
+            || state.is(Blocks.MANGROVE_ROOTS);
+    }
+
+    /** At most this many tree blocks are taken down, so a big forest canopy can't run away. */
+    private static final int MAX_TREE_BLOCKS = 12000;
+    /** How far past the file's edges a tree may reach and still be taken down. */
+    private static final int TREE_MARGIN = 16;
+
+    /**
+     * Takes down every tree in or within 2 blocks of the opening, whole: all logs and leaves touching it, so no
+     * branch or canopy is left in the air.
+     */
+    private static void clearTrees(ServerLevel level, List<BlockPos> openingColumns, int surfaceY, BlockPos min, BlockPos max) {
+        Deque<BlockPos> queue = new ArrayDeque<>();
+        Set<BlockPos> seen = new HashSet<>();
+        BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+        for (BlockPos column : openingColumns) {
+            for (int dx = -2; dx <= 2; dx++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    int x = column.getX() + dx, z = column.getZ() + dz;
+                    int top = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
+                    for (int y = surfaceY - 4; y < top; y++) {
+                        at.set(x, y, z);
+                        if (isTree(level.getBlockState(at)) && seen.add(at.immutable())) queue.add(at.immutable());
+                    }
+                }
+            }
+        }
+        int removed = 0;
+        while (!queue.isEmpty() && removed < MAX_TREE_BLOCKS) {
+            BlockPos pos = queue.poll();
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+            removed++;
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        BlockPos next = pos.offset(dx, dy, dz);
+                        if (next.getX() < min.getX() || next.getX() > max.getX() || next.getZ() < min.getZ() || next.getZ() > max.getZ()) continue;
+                        if (!seen.contains(next) && isTree(level.getBlockState(next))) {
+                            seen.add(next);
+                            queue.add(next);
+                        }
+                    }
+                }
+            }
+        }
+        if (removed > 0) SuperiorTutorial.LOGGER.info("Took down {} tree blocks over the tutorial cove", removed);
+    }
+
+    /** Takes down trees over the opening, clears it up to the sky, then places the file (blocks, chests, the NPCs). */
     static void place(ServerLevel level, StructureTemplate template, BlockPos origin, Rotation rotation) {
         StructurePlaceSettings settings = settings(rotation);
         int surfaceY = origin.getY() + SURFACE;
+        List<BlockPos> opening = new ArrayList<>();
         for (StructureTemplate.StructureBlockInfo info : template.filterBlocks(origin, settings, Blocks.AIR)) {
-            if (info.pos().getY() != surfaceY) continue;
-            int top = level.getHeight(Heightmap.Types.WORLD_SURFACE, info.pos().getX(), info.pos().getZ());
-            BlockPos.MutableBlockPos at = info.pos().mutable();
+            if (info.pos().getY() == surfaceY) opening.add(info.pos());
+        }
+        var size = template.getSize(rotation);
+        BlockPos min = origin.offset(-TREE_MARGIN, 0, -TREE_MARGIN);
+        BlockPos max = origin.offset(size.getX() + TREE_MARGIN, 0, size.getZ() + TREE_MARGIN);
+        clearTrees(level, opening, surfaceY, min, max);
+        for (BlockPos column : opening) {
+            int top = level.getHeight(Heightmap.Types.WORLD_SURFACE, column.getX(), column.getZ());
+            BlockPos.MutableBlockPos at = column.mutable();
             for (int y = surfaceY + 1; y < top; y++) {
                 at.setY(y);
                 if (!level.getBlockState(at).isAir()) level.setBlock(at, Blocks.AIR.defaultBlockState(), 2);
