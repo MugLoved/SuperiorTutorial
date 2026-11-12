@@ -56,8 +56,12 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
     public static final float MAX_HEAD_TURN = 70.0f;
     static final double STOP_RANGE = 3.0;
     static final double WATCH_RANGE = 6.0;
-    /** Walking speed: about a third of a block a second (his walk animation is made for 0.28; it is sped up to match). */
-    private static final double SPEED = 0.011;
+    /**
+     * Walking speed: about 0.3 blocks a second, a slow amble (his walk animation is made for 0.28 and is matched to his
+     * real speed). A land mob's ground speed grows with the square of this value: 0.0825 settles at 0.015 blocks a
+     * tick. (It was 0.011, which works out at under a hundredth of a block a second, so he never got anywhere.)
+     */
+    private static final double SPEED = 0.0825;
     public static final double WALK_ANIMATION_SPEED = 0.28;
     private static final int HIT_COOLDOWN_TICKS = 60;
     private static final int APPEAR_DELAY_TICKS = 4;
@@ -65,6 +69,19 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
 
     public static final byte EVENT_VANISH = 101;
     public static final byte EVENT_APPEAR = 102;
+    /** 103, 104, 105: start fidget 0, 1 or 2. The server picks them, since only it knows he is standing still. */
+    public static final byte EVENT_FIDGET = 103;
+
+    /** First fidget 6 to 14 s after he comes to a stop; after that one every 15 to 40 s while he stands. */
+    private static final int FIRST_FIDGET_MIN_TICKS = 120, FIRST_FIDGET_SPREAD_TICKS = 161;
+    private static final int FIDGET_MIN_TICKS = 300, FIDGET_SPREAD_TICKS = 501;
+    /** Clip lengths of the three fidgets, plus the 6-tick blend, so he does not walk off in the middle of one. */
+    private static final int[] FIDGET_TICKS = {94, 58, 66};
+    /**
+     * Story keeps turning a held speaker's head every tick of a conversation. If his AI is off and nothing has done
+     * that for this long, the hold was lost (a conversation that ended without letting go): switch his AI back on.
+     */
+    private static final int LOST_HOLD_TICKS = 60;
 
     private static final String HOME_TAG = "HaskelHome";
     private static final String SPOTS_TAG = "HaskelSpots";
@@ -88,6 +105,10 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
     private final List<BlockPos> pendingOffsets = new ArrayList<>();
 
     private long lastVanish = -1000;
+    private long heldTouchedAt;
+    private long nextFidgetAt = -1;
+    private long fidgetUntil;
+    private boolean stoodStill;
     private int appearIn;
     private UUID lastAttacker;
 
@@ -99,7 +120,6 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
     public int clientPendingSound;
     public int clientFidget = -1;
     public long clientFidgetStart;
-    public long clientNextFidget = -1;
     /** His body turn at the end of the last client tick (the dialogue portrait turns him; see the renderer). */
     public float clientTickBodyRot;
     /** The head turn (radians) the model added on top of the animation in the last world frame. */
@@ -185,7 +205,13 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
                 pendingOffsets.clear();
             }
             if (appearIn > 0 && --appearIn == 0) appear();
+            long now = level().getGameTime();
+            if (isNoAi() && now - heldTouchedAt > LOST_HOLD_TICKS) {
+                setNoAi(false);
+                getPersistentData().remove("superiorstory_noai_restore");
+            }
             if (isNoAi()) watchWhileHeld();
+            fidgetTick(now);
         }
         super.tick();
     }
@@ -204,8 +230,44 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
 
     @Override
     public void setYHeadRot(float yaw) {
-        if (!level().isClientSide && isNoAi()) return;
+        if (!level().isClientSide && isNoAi()) {
+            heldTouchedAt = level().getGameTime();   // Story's hold turns the head every tick while it lasts
+            return;
+        }
         super.setYHeadRot(yaw);
+    }
+
+    @Override
+    public void setNoAi(boolean noAi) {
+        super.setNoAi(noAi);
+        if (noAi && level() != null) heldTouchedAt = level().getGameTime();
+    }
+
+    /** Server: while he stands still and nobody is talking to him, now and then one of his fidgets. */
+    private void fidgetTick(long now) {
+        boolean still = !isNoAi() && getNavigation().isDone() && getDeltaMovement().horizontalDistanceSqr() < 1.0e-5;
+        if (!still) {
+            stoodStill = false;
+            nextFidgetAt = -1;
+            return;
+        }
+        if (nextFidgetAt < 0) {
+            nextFidgetAt = stoodStill
+                ? now + FIDGET_MIN_TICKS + random.nextInt(FIDGET_SPREAD_TICKS)
+                : now + FIRST_FIDGET_MIN_TICKS + random.nextInt(FIRST_FIDGET_SPREAD_TICKS);
+            stoodStill = true;
+            return;
+        }
+        if (now < nextFidgetAt) return;
+        int which = random.nextInt(FIDGET_TICKS.length);
+        fidgetUntil = now + FIDGET_TICKS[which];
+        nextFidgetAt = -1;
+        level().broadcastEntityEvent(this, (byte) (EVENT_FIDGET + which));
+    }
+
+    /** True while a fidget plays (he waits for it to end before walking on). */
+    boolean fidgeting() {
+        return level().getGameTime() < fidgetUntil;
     }
 
     @Override
@@ -320,41 +382,54 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
         lastAttacker = null;
     }
 
-    /** The dock spot farthest from the player, at least 8 blocks off; without spots, a dry spot 8 to 12 blocks away. */
+    /**
+     * Where a hit sends him: the dock spot farthest from the player (his home spot is not one of them), preferably 8
+     * or more blocks off. Without dock spots, a dry spot 8 to 12 blocks away.
+     */
     private Vec3 vanishTarget(Player from) {
-        BlockPos best = null;
-        double bestDistance = MIN_VANISH_DISTANCE * MIN_VANISH_DISTANCE;
-        for (BlockPos spot : allSpots()) {
-            double distance = spot.distToCenterSqr(from.position());
-            if (distance >= bestDistance && standable(spot)) {
+        Vec3 best = null;
+        double bestDistance = -1.0;
+        boolean bestFar = false;
+        for (BlockPos spot : spots) {
+            Vec3 stand = standingPoint(spot);
+            if (stand == null) continue;
+            double distance = stand.distanceToSqr(from.position());
+            boolean far = distance >= MIN_VANISH_DISTANCE * MIN_VANISH_DISTANCE;
+            if ((far && !bestFar) || (far == bestFar && distance > bestDistance)) {
+                best = stand;
                 bestDistance = distance;
-                best = spot;
+                bestFar = far;
             }
         }
-        if (best == null) {
-            for (int attempt = 0; attempt < 32 && best == null; attempt++) {
-                double angle = random.nextDouble() * Math.PI * 2.0;
-                double reach = 8.0 + random.nextDouble() * 4.0;
-                BlockPos column = BlockPos.containing(getX() + Math.cos(angle) * reach, getY(), getZ() + Math.sin(angle) * reach);
-                for (int dy = 3; dy >= -3; dy--) {
-                    BlockPos at = column.above(dy);
-                    if (standable(at) && at.distToCenterSqr(from.position()) >= MIN_VANISH_DISTANCE * MIN_VANISH_DISTANCE) {
-                        best = at;
-                        break;
-                    }
-                }
+        if (best != null) return best;
+        for (int attempt = 0; attempt < 32; attempt++) {
+            double angle = random.nextDouble() * Math.PI * 2.0;
+            double reach = 8.0 + random.nextDouble() * 4.0;
+            BlockPos column = BlockPos.containing(getX() + Math.cos(angle) * reach, getY(), getZ() + Math.sin(angle) * reach);
+            for (int dy = 3; dy >= -3; dy--) {
+                Vec3 stand = standingPoint(column.above(dy));
+                if (stand != null && stand.distanceToSqr(from.position()) >= MIN_VANISH_DISTANCE * MIN_VANISH_DISTANCE) return stand;
             }
         }
-        return best == null ? null : Vec3.atBottomCenterOf(best);
+        return null;
     }
 
-    /** Solid ground below, room for him, and no water at his feet. */
-    private boolean standable(BlockPos at) {
+    /**
+     * Where he stands at a spot: on top of whatever is under it, a full block, a slab, a closed trapdoor or a cold
+     * campfire alike (his dock spots stand on all of those), with room for him above and no water at his feet.
+     * Null if he cannot stand there.
+     */
+    private Vec3 standingPoint(BlockPos spot) {
         Level level = level();
-        return level.getBlockState(at.below()).isFaceSturdy(level, at.below(), net.minecraft.core.Direction.UP)
-            && level.getBlockState(at).getCollisionShape(level, at).isEmpty()
-            && level.getBlockState(at.above()).getCollisionShape(level, at.above()).isEmpty()
-            && !level.getFluidState(at).is(FluidTags.WATER);
+        BlockPos below = spot.below();
+        net.minecraft.world.phys.shapes.VoxelShape floor = level.getBlockState(below).getCollisionShape(level, below);
+        if (floor.isEmpty()) return null;
+        double y = below.getY() + floor.max(net.minecraft.core.Direction.Axis.Y);
+        if (y < spot.getY() - 1.0 + 0.05) return null;   // too thin to stand on
+        if (!level.getBlockState(spot).getCollisionShape(level, spot).isEmpty()) return null;
+        if (!level.getBlockState(spot.above()).getCollisionShape(level, spot.above()).isEmpty()) return null;
+        if (level.getFluidState(spot).is(FluidTags.WATER) || level.getFluidState(BlockPos.containing(spot.getX(), y + 0.05, spot.getZ())).is(FluidTags.WATER)) return null;
+        return new Vec3(spot.getX() + 0.5, y, spot.getZ() + 0.5);
     }
 
     @Override
@@ -364,6 +439,9 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
             clientHiddenSince = level().getGameTime();
             clientPendingSound = 1;
             smoke(36, 1.0);
+        } else if (id >= EVENT_FIDGET && id < EVENT_FIDGET + FIDGETS.length) {
+            clientFidget = id - EVENT_FIDGET;
+            clientFidgetStart = level().getGameTime();
         } else if (id == EVENT_APPEAR) {
             clientHidden = false;
             clientPendingSound = 2;
@@ -487,28 +565,17 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
         double speed = Math.sqrt(dx * dx + dz * dz) * 20.0;
         if (speed > 0.05) {
             clientFidget = -1;
-            clientNextFidget = -1;
             // Matched to his real speed so his feet don't slide.
             state.getController().setAnimationSpeed(Mth.clamp(speed / WALK_ANIMATION_SPEED, 0.6, 1.8));
             return state.setAndContinue(WALK);
         }
         state.getController().setAnimationSpeed(1.0);
         if (clientFidget >= 0) {
+            // Started by the server (see fidgetTick); runs to its end, then back to the idle.
             RawAnimation fidget = FIDGETS[clientFidget];
             boolean done = state.isCurrentAnimation(fidget) && state.getController().hasAnimationFinished();
             if (!done && now - clientFidgetStart < FIDGET_TIMEOUT_TICKS && !isNoAi()) return state.setAndContinue(fidget);
             clientFidget = -1;
-            clientNextFidget = -1;
-        }
-        if (clientNextFidget < 0) clientNextFidget = now + 20L * (15 + random.nextInt(26));
-        if (now >= clientNextFidget) {
-            clientNextFidget = -1;
-            if (!isNoAi()) {
-                // Only while he stands and nobody is talking to him (Story switches his AI off while it does).
-                clientFidget = random.nextInt(FIDGETS.length);
-                clientFidgetStart = now;
-                return state.setAndContinue(FIDGETS[clientFidget]);
-            }
         }
         return state.setAndContinue(IDLE);
     }

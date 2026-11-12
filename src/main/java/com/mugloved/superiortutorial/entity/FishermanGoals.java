@@ -101,11 +101,15 @@ final class FishermanGoals {
         }
     }
 
-    /** He stays at a spot 15 to 35 seconds, then walks to another; about one walk in four goes home. */
+    /**
+     * He stays at a spot 20 to 40 seconds (and lets a fidget finish), then walks to another spot he can reach; about
+     * one walk in four goes home. Timed by the clock, not by how often the game asks.
+     */
     static final class WalkTheDock extends Goal {
         private final Fisherman fisherman;
-        private int waitTicks = 100;
+        private long nextWalkAt = -1;
         private BlockPos goal;
+        private net.minecraft.world.level.pathfinder.Path path;
 
         WalkTheDock(Fisherman fisherman) {
             this.fisherman = fisherman;
@@ -114,29 +118,46 @@ final class FishermanGoals {
 
         @Override
         public boolean canUse() {
-            if (--waitTicks > 0) return false;
-            waitTicks = 300 + fisherman.getRandom().nextInt(401);
+            long now = fisherman.level().getGameTime();
+            if (nextWalkAt < 0) nextWalkAt = now + 400 + fisherman.getRandom().nextInt(401);
+            if (now < nextWalkAt || fisherman.fidgeting()) return false;
             List<BlockPos> all = fisherman.allSpots();
             if (all.size() < 2) return false;
             BlockPos here = fisherman.nearestSpot();
             BlockPos home = fisherman.home();
+            List<BlockPos> others = new java.util.ArrayList<>(all);
+            others.remove(here);
+            java.util.Collections.shuffle(others, new java.util.Random(fisherman.getRandom().nextLong()));
             if (home != null && !home.equals(here) && fisherman.getRandom().nextInt(4) == 0) {
-                goal = home;
-            } else {
-                goal = all.get(fisherman.getRandom().nextInt(all.size()));
-                if (goal.equals(here)) return false;
+                others.remove(home);
+                others.add(0, home);
             }
-            return fisherman.getNavigation().createPath(goal, 0) != null;
+            for (BlockPos candidate : others) {
+                net.minecraft.world.level.pathfinder.Path found = fisherman.getNavigation().createPath(candidate, 1);
+                if (found != null && found.canReach()) {
+                    goal = candidate;
+                    path = found;
+                    return true;
+                }
+            }
+            nextWalkAt = now + 200;   // nowhere to go just now; look again in 10 s
+            return false;
         }
 
         @Override
         public void start() {
-            fisherman.getNavigation().moveTo(goal.getX() + 0.5, goal.getY(), goal.getZ() + 0.5, 1.0);
+            fisherman.getNavigation().moveTo(path, 1.0);
         }
 
         @Override
         public boolean canContinueToUse() {
             return !fisherman.getNavigation().isDone();
+        }
+
+        @Override
+        public void stop() {
+            nextWalkAt = -1;
+            path = null;
         }
     }
 
