@@ -1,6 +1,7 @@
 plugins {
     id "eclipse"
     id "net.minecraftforge.gradle" version "6.0.+"
+    id "org.spongepowered.mixin" version "0.7.+"
 }
 
 group = project.mod_group_id
@@ -23,8 +24,15 @@ minecraft {
     }
 }
 
+// Two small mixins keep world generation from growing trees and plants over the cove (see world/CoveGuard).
+mixin {
+    add sourceSets.main, "${project.mod_id}.refmap.json"
+    config "${project.mod_id}.mixins.json"
+}
+
 repositories {
     maven { url = "https://maven.minecraftforge.net" }
+    maven { url = "https://repo.spongepowered.org/repository/maven-public/" }
     mavenCentral()
 }
 
@@ -45,6 +53,7 @@ dependencies {
     implementation fg.deobf(files(localJar("geckolib")))
     // The Corpse's voice and ending sounds go through Superior Sounds (optional at runtime).
     compileOnly fg.deobf(files(localJar("superior_sounds")))
+    annotationProcessor "org.spongepowered:mixin:0.8.5:processor"
 }
 
 jar {
@@ -52,7 +61,8 @@ jar {
         attributes(
             "Implementation-Title": project.mod_id,
             "Implementation-Version": project.version,
-            "Specification-Version": project.version
+            "Specification-Version": project.version,
+            "MixinConfigs": "${project.mod_id}.mixins.json"
         )
     }
 }

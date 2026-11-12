@@ -14,6 +14,8 @@ public final class CoveData extends SavedData {
     boolean decided;
     BlockPos origin;
     Rotation rotation = Rotation.NONE;
+    /** A new world's site, chosen before its first chunk was made; the cove is placed there once the server starts. */
+    BlockPos chosen;
 
     public static CoveData get(ServerLevel overworld) {
         return overworld.getDataStorage().computeIfAbsent(CoveData::load, CoveData::new, NAME);
@@ -30,6 +32,11 @@ public final class CoveData extends SavedData {
         setDirty();
     }
 
+    void choose(BlockPos site) {
+        this.chosen = site.immutable();
+        setDirty();
+    }
+
     void skip() {
         decided = true;
         setDirty();
@@ -40,6 +47,7 @@ public final class CoveData extends SavedData {
         data.decided = tag.getBoolean("Decided");
         if (tag.contains("Origin")) data.origin = BlockPos.of(tag.getLong("Origin"));
         data.rotation = Rotation.values()[Math.floorMod(tag.getInt("Rotation"), Rotation.values().length)];
+        if (tag.contains("Chosen")) data.chosen = BlockPos.of(tag.getLong("Chosen"));
         return data;
     }
 
@@ -48,6 +56,7 @@ public final class CoveData extends SavedData {
         tag.putBoolean("Decided", decided);
         if (origin != null) tag.putLong("Origin", origin.asLong());
         tag.putInt("Rotation", rotation.ordinal());
+        if (chosen != null) tag.putLong("Chosen", chosen.asLong());
         return tag;
     }
 }
