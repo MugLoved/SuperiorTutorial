@@ -79,11 +79,15 @@ public final class TutorialClient {
                 }
             }
             lastState = state;
-            for (DecayingCorpse corpse : nearby) DecayingCorpseEffects.tick(level, corpse);
+            for (DecayingCorpse corpse : nearby) {
+                DecayingCorpseEffects.tick(level, corpse);
+                CorpseAudio.ambient(corpse, level.random, level.getGameTime());
+            }
             for (Fisherman fisherman : level.getEntitiesOfClass(Fisherman.class, minecraft.player.getBoundingBox().inflate(64.0))) {
                 // Remembered so the renderer can tell the dialogue portrait (which turns him) from the world.
                 fisherman.clientTickBodyRot = fisherman.yBodyRot;
                 FishermanAudio.pending(fisherman);
+                FishermanAudio.ambient(fisherman, level.random, level.getGameTime());
             }
         }
     }

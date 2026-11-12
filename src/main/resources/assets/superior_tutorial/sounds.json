@@ -359,5 +359,45 @@
         "volume": 0.5
       }
     ]
+  },
+  "corpse.ambient": {
+    "subtitle": "subtitles.superior_tutorial.corpse.ambient",
+    "sounds": [
+      {
+        "name": "minecraft:mob/husk/idle1",
+        "pitch": 0.55,
+        "volume": 0.22
+      },
+      {
+        "name": "minecraft:mob/husk/idle2",
+        "pitch": 0.55,
+        "volume": 0.22
+      },
+      {
+        "name": "minecraft:mob/husk/idle3",
+        "pitch": 0.55,
+        "volume": 0.22
+      }
+    ]
+  },
+  "fisherman.ambient": {
+    "subtitle": "subtitles.superior_tutorial.fisherman.ambient",
+    "sounds": [
+      {
+        "name": "minecraft:mob/villager/idle1",
+        "pitch": 0.72,
+        "volume": 0.4
+      },
+      {
+        "name": "minecraft:mob/villager/idle2",
+        "pitch": 0.72,
+        "volume": 0.4
+      },
+      {
+        "name": "minecraft:mob/villager/idle3",
+        "pitch": 0.72,
+        "volume": 0.4
+      }
+    ]
   }
 }

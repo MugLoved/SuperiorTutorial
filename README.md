@@ -93,7 +93,7 @@ All text lives in `src/main/resources/assets/superior_tutorial/lang/en_us.json` 
 
 ### Sounds
 
-All of them play through Superior Sounds (catalog `assets/superior_tutorial/superior_sounds/audio/corpse.json`); this mod plays nothing itself.
+All of them play through Superior Sounds (catalog `assets/superior_tutorial/superior_sounds/audio/corpse.json`); this mod plays nothing itself. While he waits (not talking, no ending chosen) he also groans now and then, every 14 to 32 seconds: event `superior_tutorial:corpse_ambient`, sound `corpse.ambient` = the husk's idle sounds at 0.55 pitch (slow and low), volume 0.22.
 
 - **Voice:** while the local player has the dialogue box open with a Corpse, the signal `superior_tutorial:corpse_speaking` is true, and a rule with priority 100 answers Story's typing event (`superiorstory:type`) with `superior_tutorial:corpse.voice` instead of Story's blip. The six voice blips (`sounds/corpse/voice_1-6.ogg`) are cut from Mug's recordings to 45 ms, the length of the intro's typing blips, so they never pile up.
 - **Endings:** cue events `superior_tutorial:corpse_slay_*` and `corpse_decay_*` fire at set moments of each ending, at his body. They play vanilla sounds lowered in pitch (`assets/superior_tutorial/sounds.json`): slay is a last breath, bones, cloth, a slump, a low ring as he fades, dust; leave is wet rot, bone and grit as his hand drops, roots, moss, and settling mud.
@@ -122,7 +122,7 @@ Working name. Entity `superior_tutorial:fisherman` (about a villager's size), sp
 - **People:** a player within 3 blocks makes him stop and face them; within 6 his head follows them (up to 70 degrees). His body turns only after his head has been turned far for a while, and slowly. He says nothing on his own; the only line outside dialogue is the one after a hit.
 - **Hits:** he can't be hurt. A player's hit makes him vanish in a big cloud of smoke and step out again on the dock spot farthest from that player, standing on whatever is there (slab, trapdoor, cold campfire); never his home spot. Only with no dock spots, dry ground 8 to 12 blocks away, with a line for the attacker. A sneaking creative hit removes him, for editing. `/kill` and the void still work.
 - **Animations:** idle always; one of three fidgets (weight shift, pack settle, toe tap) 6 to 14 seconds after he stops, then every 15 to 40 seconds while he stands and nobody talks to him (the server picks them and tells the clients); the walk while he moves, sped up to match his pace.
-- **Sounds** (through Superior Sounds, catalog `superior_sounds/audio/fisherman.json`): his voice blips (`sounds/fisherman/voice_1-6.ogg`) replace Story's typing blip while the local player talks to him (signal `superior_tutorial:fisherman_speaking`); cue events `superior_tutorial:fisherman_vanish` and `fisherman_appear`.
+- **Sounds** (through Superior Sounds, catalog `superior_sounds/audio/fisherman.json`): his voice blips (`sounds/fisherman/voice_1-6.ogg`) replace Story's typing blip while the local player talks to him (signal `superior_tutorial:fisherman_speaking`); cue events `superior_tutorial:fisherman_vanish` and `fisherman_appear`. Ambient: every 10 to 25 seconds while he isn't talking or hidden, a low grumble (event `superior_tutorial:fisherman_ambient`, sound `fisherman.ambient` = the villager's idle sounds at 0.72 pitch, which also slows them, volume 0.4).
 - Persistent: never despawns. If a conversation ever ends without Story letting go of him (his AI left off), he frees himself after 3 seconds.
 
 ### The crate quest

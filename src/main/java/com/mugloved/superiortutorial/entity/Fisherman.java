@@ -120,6 +120,8 @@ public class Fisherman extends PathfinderMob implements GeoEntity {
     public int clientPendingSound;
     public int clientFidget = -1;
     public long clientFidgetStart;
+    /** Game time of his next grumble (client; -1 when not counting). */
+    public long clientNextAmbient = -1;
     /** His body turn at the end of the last client tick (the dialogue portrait turns him; see the renderer). */
     public float clientTickBodyRot;
     /** The head turn (radians) the model added on top of the animation in the last world frame. */

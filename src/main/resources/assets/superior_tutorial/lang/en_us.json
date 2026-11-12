@@ -136,5 +136,7 @@
   "superior_tutorial.fisherman.crate.hooked": "Your line snags on something heavy. A crate comes up.",
   "superior_tutorial.fisherman.crate.have": "You already have Haskel's crate.",
   "superior_tutorial.fisherman.crate.done": "Just silt and an old rope now.",
-  "superior_tutorial.fisherman.no_village": "Haskel: Here, take the sack. Don't die!"
+  "superior_tutorial.fisherman.no_village": "Haskel: Here, take the sack. Don't die!",
+  "subtitles.superior_tutorial.corpse.ambient": "Corpse groans",
+  "subtitles.superior_tutorial.fisherman.ambient": "Haskel grumbles"
 }

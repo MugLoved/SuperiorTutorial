@@ -81,6 +81,25 @@ final class CorpseAudio {
         }
     }
 
+    /**
+     * Now and then, while he waits and nobody talks to him, a slow, quiet husk groan (event
+     * {@code superior_tutorial:corpse_ambient}; the sound is a husk's idle at 0.55 pitch, see sounds.json).
+     * Each player's game times its own.
+     */
+    static void ambient(DecayingCorpse corpse, net.minecraft.util.RandomSource random, long now) {
+        if (corpse.clientPhase != DecayingCorpse.PHASE_IDLE || corpse.clientEndingStart >= 0 || corpse.isNoAi()) {
+            corpse.clientNextAmbient = -1;
+            return;
+        }
+        if (corpse.clientNextAmbient < 0) {
+            corpse.clientNextAmbient = now + 20L * (14 + random.nextInt(19));
+            return;
+        }
+        if (now < corpse.clientNextAmbient) return;
+        corpse.clientNextAmbient = -1;
+        if (available()) emit("corpse_ambient", corpse.position().add(0.0, 1.0, 0.0));
+    }
+
     /** Plays the ending cues whose moment fell between {@code before} and {@code now} (seconds into the ending). */
     static void endingCues(DecayingCorpse corpse, double before, double now) {
         Cue[] cues = corpse.clientEnding == DecayingCorpse.PHASE_SLAY ? SLAY

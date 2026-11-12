@@ -16,6 +16,10 @@
     "fisherman_appear": {
       "sound": "fisherman.appear",
       "event": "superior_tutorial:fisherman_appear"
+    },
+    "fisherman_ambient": {
+      "sound": "fisherman.ambient",
+      "event": "superior_tutorial:fisherman_ambient"
     }
   }
 }

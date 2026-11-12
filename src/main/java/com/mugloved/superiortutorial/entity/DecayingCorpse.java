@@ -65,6 +65,8 @@ public class DecayingCorpse extends Mob implements GeoEntity {
     public static final int PHASE_ROTTEN = 3;
     public static final int PHASE_GONE = 4;
     public int clientPhase = PHASE_IDLE;
+    /** Game time of his next groan (client; -1 when not counting). */
+    public long clientNextAmbient = -1;
     /** The ending playing for the local player ({@link #PHASE_SLAY} or {@link #PHASE_LEAVE}), and when it began (game time), or -1. */
     public int clientEnding = PHASE_IDLE;
     public long clientEndingStart = -1;

@@ -52,7 +52,8 @@ public final class SuperiorTutorial {
         "corpse.voice",
         "corpse.slay.breath", "corpse.slay.bones", "corpse.slay.cloth", "corpse.slay.slump", "corpse.slay.release", "corpse.slay.dust",
         "corpse.decay.wet", "corpse.decay.bones", "corpse.decay.grit", "corpse.decay.roots", "corpse.decay.moss", "corpse.decay.settle",
-        "fisherman.voice", "fisherman.vanish", "fisherman.appear",
+        "corpse.ambient",
+        "fisherman.voice", "fisherman.vanish", "fisherman.appear", "fisherman.ambient",
     };
 
     static {

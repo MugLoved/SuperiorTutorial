@@ -56,6 +56,10 @@
     "corpse_decay_settle": {
       "sound": "corpse.decay.settle",
       "event": "superior_tutorial:corpse_decay_settle"
+    },
+    "corpse_ambient": {
+      "sound": "corpse.ambient",
+      "event": "superior_tutorial:corpse_ambient"
     }
   }
 }
