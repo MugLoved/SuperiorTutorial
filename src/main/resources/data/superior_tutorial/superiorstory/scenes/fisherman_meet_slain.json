@@ -100,6 +100,11 @@
       {
         "text": {
           "translate": "superior_tutorial.fisherman.deal.4"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.5"
         },
         "choices": [
           {
@@ -246,6 +251,21 @@
       {
         "text": {
           "translate": "superior_tutorial.fisherman.who.3"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.who.4"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.who.5"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.who.6"
         },
         "choices": [
           {
@@ -331,6 +351,11 @@
       {
         "text": {
           "translate": "superior_tutorial.fisherman.deal.4"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.5"
         },
         "choices": [
           {

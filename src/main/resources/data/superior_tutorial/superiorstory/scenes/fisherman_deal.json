@@ -79,6 +79,11 @@
       {
         "text": {
           "translate": "superior_tutorial.fisherman.deal.4"
+        }
+      },
+      {
+        "text": {
+          "translate": "superior_tutorial.fisherman.deal.5"
         },
         "choices": [
           {
