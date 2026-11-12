@@ -6,9 +6,13 @@ import com.mugloved.superiorstory.api.StoryHooks;
 import com.mugloved.superiortutorial.SuperiorTutorial;
 import com.mugloved.superiortutorial.block.SunkenCrateBlock;
 import com.mugloved.superiortutorial.entity.FishermanState;
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -22,6 +26,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.MapItem;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.saveddata.maps.MapDecoration;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.minecraft.world.level.storage.loot.LootParams;
@@ -34,6 +39,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -153,20 +159,26 @@ public final class HaskelQuest {
         ServerPlayer player = context.player();
         if (FishermanState.has(player, FishermanState.DONE) || !takeCrate(player)) return;
         ItemStack map = villageMap(player);
-        if (map != null) {
-            ItemHandlerHelper.giveItemToPlayer(player, map);
-        } else {
-            player.displayClientMessage(Component.translatable("superior_tutorial.fisherman.no_village"), false);
-        }
-        for (ItemStack stack : sack(player)) ItemHandlerHelper.giveItemToPlayer(player, stack);
+        if (map == null) player.displayClientMessage(Component.translatable("superior_tutorial.fisherman.no_village"), false);
+        for (ItemStack stack : sack(player, map)) ItemHandlerHelper.giveItemToPlayer(player, stack);
         FishermanState.set(player, FishermanState.DONE);
     }
 
-    /** An explorer map centred on the nearest village (any structure in #minecraft:village), or null if none is in reach. */
+    /**
+     * An explorer map centred on the nearest village, or null if none is in reach. Villages are the structures in
+     * #minecraft:village plus any structure whose name has "village" in it (modded villages are often not tagged).
+     */
     private static ItemStack villageMap(ServerPlayer player) {
         ServerLevel level = player.serverLevel();
-        BlockPos village = level.findNearestMapStructure(StructureTags.VILLAGE, player.blockPosition(), 100, false);
-        if (village == null) return null;
+        List<Holder<Structure>> villages = level.registryAccess().registryOrThrow(Registries.STRUCTURE).holders()
+            .filter(holder -> holder.is(StructureTags.VILLAGE) || holder.key().location().getPath().contains("village"))
+            .<Holder<Structure>>map(holder -> holder)
+            .toList();
+        if (villages.isEmpty()) return null;
+        Pair<BlockPos, Holder<Structure>> found = level.getChunkSource().getGenerator()
+            .findNearestMapStructure(level, HolderSet.direct(villages), player.blockPosition(), 100, false);
+        if (found == null) return null;
+        BlockPos village = found.getFirst();
         ItemStack map = MapItem.create(level, village.getX(), village.getZ(), (byte) 2, true, true);
         MapItem.renderBiomePreviewMap(level, map);
         MapItemSavedData.addTargetDecoration(map, village, "+", MapDecoration.Type.RED_X);
@@ -174,14 +186,27 @@ public final class HaskelQuest {
         return map;
     }
 
-    /** The Haskelsack with the loot table inside; without Supplementaries, the loot itself. */
-    private static List<ItemStack> sack(ServerPlayer player) {
+    /**
+     * The Haskelsack with the loot table inside, the map taking the fish stew's place (or the last slot); without
+     * Supplementaries, the loot itself.
+     */
+    private static List<ItemStack> sack(ServerPlayer player, ItemStack map) {
         LootTable table = player.server.getLootData().getLootTable(SACK_LOOT);
         LootParams params = new LootParams.Builder(player.serverLevel())
             .withParameter(LootContextParams.ORIGIN, player.position())
             .withParameter(LootContextParams.THIS_ENTITY, player)
             .create(LootContextParamSets.CHEST);
-        List<ItemStack> loot = table.getRandomItems(params);
+        List<ItemStack> loot = new ArrayList<>(table.getRandomItems(params));
+        if (map != null) {
+            int stew = -1;
+            for (int i = 0; i < loot.size(); i++) {
+                ResourceLocation id = ForgeRegistries.ITEMS.getKey(loot.get(i).getItem());
+                if (id != null && id.getPath().equals("fish_stew")) stew = i;
+            }
+            if (stew >= 0) loot.set(stew, map);
+            else if (loot.size() >= SACK_SLOTS) loot.set(SACK_SLOTS - 1, map);
+            else loot.add(map);
+        }
         Item sackItem = ForgeRegistries.ITEMS.getValue(SACK);
         if (sackItem == null || sackItem == Items.AIR) {
             SuperiorTutorial.LOGGER.warn("Supplementaries is not installed; giving the Haskelsack's contents loose.");

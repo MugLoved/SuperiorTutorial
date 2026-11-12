@@ -8,6 +8,11 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -16,8 +21,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
@@ -28,10 +35,13 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlac
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -206,37 +216,57 @@ public final class CovePlacer {
         return best;
     }
 
-    /** Tree blocks a cleared opening could leave floating. */
+    /** Tree blocks a cleared opening could leave floating (modded trees too: by tag, leaves class, or name). */
     private static boolean isTree(BlockState state) {
-        return state.is(BlockTags.LOGS) || state.is(BlockTags.LEAVES) || state.is(BlockTags.WART_BLOCKS)
+        if (state.isAir()) return false;
+        if (state.is(BlockTags.LOGS) || state.is(BlockTags.LEAVES) || state.is(BlockTags.WART_BLOCKS)
+            || state.getBlock() instanceof LeavesBlock
             || state.is(Blocks.VINE) || state.is(Blocks.BEE_NEST) || state.is(Blocks.COCOA)
             || state.is(Blocks.MUSHROOM_STEM) || state.is(Blocks.BROWN_MUSHROOM_BLOCK) || state.is(Blocks.RED_MUSHROOM_BLOCK)
-            || state.is(Blocks.MANGROVE_ROOTS);
+            || state.is(Blocks.MANGROVE_ROOTS)) return true;
+        ResourceLocation id = ForgeRegistries.BLOCKS.getKey(state.getBlock());
+        if (id == null) return false;
+        String path = id.getPath();
+        if (path.contains("dripleaf") || path.contains("pumpkin") || path.contains("melon")) return false;
+        return path.endsWith("_log") || path.endsWith("_wood") || path.endsWith("_leaves") || path.endsWith("_stem")
+            || path.endsWith("_hyphae");
     }
 
-    /** At most this many tree blocks are taken down, so a big forest canopy can't run away. */
+    /** At most this many tree blocks are taken down in one sweep, so a big forest canopy can't run away. */
     private static final int MAX_TREE_BLOCKS = 12000;
     /** How far past the file's edges a tree may reach and still be taken down. */
     private static final int TREE_MARGIN = 16;
+    /** A tree within this many blocks (sideways) of the opening is taken down. */
+    private static final int TREE_RING = 3;
+    /** Trees can still grow in from chunks made after the cove (world generation): sweep again for this long. */
+    private static final long SWEEP_FOR_TICKS = 24000L * 3;
 
     /**
-     * Takes down every tree in or within 2 blocks of the opening, whole: all logs and leaves touching it, so no
-     * branch or canopy is left in the air.
+     * Takes down every tree in or near the opening, whole: all logs and leaves touching it, so no branch or canopy is
+     * left in the air. Blocks of the cove itself ({@code keep}) are never touched, and unloaded chunks are left alone.
      */
-    private static void clearTrees(ServerLevel level, List<BlockPos> openingColumns, int surfaceY, BlockPos min, BlockPos max) {
+    private static void clearTrees(ServerLevel level, List<BlockPos> openingColumns, int surfaceY, BlockPos min, BlockPos max,
+                                   Set<BlockPos> keep) {
         Deque<BlockPos> queue = new ArrayDeque<>();
         Set<BlockPos> seen = new HashSet<>();
-        BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+        Set<Long> columns = new HashSet<>();
         for (BlockPos column : openingColumns) {
-            for (int dx = -2; dx <= 2; dx++) {
-                for (int dz = -2; dz <= 2; dz++) {
-                    int x = column.getX() + dx, z = column.getZ() + dz;
-                    int top = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
-                    for (int y = surfaceY - 4; y < top; y++) {
-                        at.set(x, y, z);
-                        if (isTree(level.getBlockState(at)) && seen.add(at.immutable())) queue.add(at.immutable());
-                    }
+            for (int dx = -TREE_RING; dx <= TREE_RING; dx++) {
+                for (int dz = -TREE_RING; dz <= TREE_RING; dz++) {
+                    columns.add(BlockPos.asLong(column.getX() + dx, 0, column.getZ() + dz));
                 }
+            }
+        }
+        BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+        for (long column : columns) {
+            int x = BlockPos.getX(column), z = BlockPos.getZ(column);
+            if (!level.hasChunk(x >> 4, z >> 4)) continue;
+            int top = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
+            for (int y = surfaceY - 4; y < top; y++) {
+                at.set(x, y, z);
+                if (keep.contains(at) || !isTree(level.getBlockState(at))) continue;
+                BlockPos pos = at.immutable();
+                if (seen.add(pos)) queue.add(pos);
             }
         }
         int removed = 0;
@@ -249,7 +279,8 @@ public final class CovePlacer {
                     for (int dz = -1; dz <= 1; dz++) {
                         BlockPos next = pos.offset(dx, dy, dz);
                         if (next.getX() < min.getX() || next.getX() > max.getX() || next.getZ() < min.getZ() || next.getZ() > max.getZ()) continue;
-                        if (!seen.contains(next) && isTree(level.getBlockState(next))) {
+                        if (seen.contains(next) || keep.contains(next) || !level.hasChunk(next.getX() >> 4, next.getZ() >> 4)) continue;
+                        if (isTree(level.getBlockState(next))) {
                             seen.add(next);
                             queue.add(next);
                         }
@@ -260,18 +291,90 @@ public final class CovePlacer {
         if (removed > 0) SuperiorTutorial.LOGGER.info("Took down {} tree blocks over the tutorial cove", removed);
     }
 
-    /** Takes down trees over the opening, clears it up to the sky, then places the file (blocks, chests, the NPCs). */
-    static void place(ServerLevel level, StructureTemplate template, BlockPos origin, Rotation rotation) {
-        StructurePlaceSettings settings = settings(rotation);
+    /** The file's own tree-like blocks (Mug's logs, stripped wood, leaves) in world positions, which sweeps never touch. */
+    private static Set<BlockPos> ownTreeBlocks(StructureTemplate template, BlockPos origin) {
+        Set<BlockPos> own = new HashSet<>();
+        CompoundTag saved = template.save(new CompoundTag());
+        ListTag palette = saved.getList("palette", Tag.TAG_COMPOUND);
+        boolean[] tree = new boolean[palette.size()];
+        var blocks = BuiltInRegistries.BLOCK.asLookup();
+        for (int i = 0; i < palette.size(); i++) tree[i] = isTree(NbtUtils.readBlockState(blocks, palette.getCompound(i)));
+        ListTag list = saved.getList("blocks", Tag.TAG_COMPOUND);
+        for (int i = 0; i < list.size(); i++) {
+            CompoundTag block = list.getCompound(i);
+            int state = block.getInt("state");
+            if (state < 0 || state >= tree.length || !tree[state]) continue;
+            ListTag pos = block.getList("pos", Tag.TAG_INT);
+            own.add(origin.offset(pos.getInt(0), pos.getInt(1), pos.getInt(2)));
+        }
+        return own;
+    }
+
+    /** The opening's columns (world positions at the surface). */
+    private static List<BlockPos> openingColumns(StructureTemplate template, BlockPos origin, StructurePlaceSettings settings) {
         int surfaceY = origin.getY() + SURFACE;
         List<BlockPos> opening = new ArrayList<>();
         for (StructureTemplate.StructureBlockInfo info : template.filterBlocks(origin, settings, Blocks.AIR)) {
             if (info.pos().getY() == surfaceY) opening.add(info.pos());
         }
+        return opening;
+    }
+
+    // ---- Trees that grow in later ---------------------------------------------------------------------------------
+
+    /** Game time of the next sweep, or 0 for none pending. */
+    private static volatile long sweepAt;
+    private static Set<BlockPos> ownTrees;
+    private static BlockPos ownTreesOrigin;
+
+    /** A chunk next to the cove has loaded (often: just generated, with trees that may lean over the opening). */
+    @SubscribeEvent
+    public static void chunkLoaded(ChunkEvent.Load event) {
+        if (!(event.getLevel() instanceof ServerLevel level) || level.dimension() != Level.OVERWORLD) return;
+        if (level.getGameTime() > SWEEP_FOR_TICKS) return;
+        CoveData data = CoveData.get(level);
+        if (!data.placed()) return;
+        int cx = event.getChunk().getPos().x, cz = event.getChunk().getPos().z;
+        int minX = (data.origin.getX() - TREE_MARGIN) >> 4, minZ = (data.origin.getZ() - TREE_MARGIN) >> 4;
+        int maxX = (data.origin.getX() + 109 + TREE_MARGIN) >> 4, maxZ = (data.origin.getZ() + 55 + TREE_MARGIN) >> 4;
+        if (cx < minX || cx > maxX || cz < minZ || cz > maxZ) return;
+        if (sweepAt == 0) sweepAt = level.getGameTime() + 40;
+    }
+
+    @SubscribeEvent
+    public static void levelTick(TickEvent.LevelTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || !(event.level instanceof ServerLevel level) || level.dimension() != Level.OVERWORLD) return;
+        long at = sweepAt;
+        if (at == 0 || level.getGameTime() < at) return;
+        sweepAt = 0;
+        CoveData data = CoveData.get(level);
+        if (!data.placed()) return;
+        Optional<StructureTemplate> template = level.getStructureManager().get(COVE);
+        if (template.isEmpty()) return;
+        if (ownTrees == null || !data.origin.equals(ownTreesOrigin)) {
+            ownTrees = ownTreeBlocks(template.get(), data.origin);
+            ownTreesOrigin = data.origin;
+        }
+        sweep(level, template.get(), data.origin, ownTrees);
+    }
+
+    private static void sweep(ServerLevel level, StructureTemplate template, BlockPos origin, Set<BlockPos> keep) {
+        StructurePlaceSettings settings = settings(Rotation.NONE);
+        var size = template.getSize(Rotation.NONE);
+        BlockPos min = origin.offset(-TREE_MARGIN, 0, -TREE_MARGIN);
+        BlockPos max = origin.offset(size.getX() + TREE_MARGIN, 0, size.getZ() + TREE_MARGIN);
+        clearTrees(level, openingColumns(template, origin, settings), origin.getY() + SURFACE, min, max, keep);
+    }
+
+    /** Takes down trees over the opening, clears it up to the sky, then places the file (blocks, chests, the NPCs). */
+    static void place(ServerLevel level, StructureTemplate template, BlockPos origin, Rotation rotation) {
+        StructurePlaceSettings settings = settings(rotation);
+        int surfaceY = origin.getY() + SURFACE;
+        List<BlockPos> opening = openingColumns(template, origin, settings);
         var size = template.getSize(rotation);
         BlockPos min = origin.offset(-TREE_MARGIN, 0, -TREE_MARGIN);
         BlockPos max = origin.offset(size.getX() + TREE_MARGIN, 0, size.getZ() + TREE_MARGIN);
-        clearTrees(level, opening, surfaceY, min, max);
+        clearTrees(level, opening, surfaceY, min, max, Set.of());
         for (BlockPos column : opening) {
             int top = level.getHeight(Heightmap.Types.WORLD_SURFACE, column.getX(), column.getZ());
             BlockPos.MutableBlockPos at = column.mutable();
@@ -281,6 +384,8 @@ public final class CovePlacer {
             }
         }
         template.placeInWorld(level, origin, origin, settings, level.getRandom(), 2);
+        // Chunks made from here on can still grow trees over the opening; sweep again once they load.
+        sweepAt = level.getGameTime() + 40;
         SuperiorTutorial.LOGGER.info("Placed the tutorial cove at {} turned {}", origin, rotation);
     }
 
